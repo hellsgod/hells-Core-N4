@@ -32,6 +32,7 @@
 #include <asm/cputype.h>
 #include <asm/exception.h>
 #include <asm/idmap.h>
+
 #include <asm/topology.h>
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
@@ -239,8 +240,10 @@ static void __cpuinit smp_store_cpu_info(unsigned int cpuid)
 
 	cpu_info->loops_per_jiffy = loops_per_jiffy;
 
+
 	store_cpu_topology(cpuid);
 }
+
 
 /*
  * This is the secondary CPU boot entry.  We're using this CPUs
