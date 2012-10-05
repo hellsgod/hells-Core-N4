@@ -367,7 +367,6 @@ show_one(optimal_freq, optimal_freq);
 show_one(up_threshold_any_cpu_load, up_threshold_any_cpu_load);
 show_one(sync_freq, sync_freq);
 show_one(boostpulse, boosted);
-show_one(boosttime, freq_boost_time);
 show_one(boostfreq, boostfreq);
 
 static ssize_t show_powersave_bias
@@ -450,30 +449,20 @@ static void update_sampling_rate(unsigned int new_rate)
 	}
 }
 
-static ssize_t store_boosttime(struct kobject *kobj, struct attribute *attr,
-				const char *buf, size_t count)
-{
-	unsigned int input;
-	int ret;
-
-	ret = sscanf(buf, "%u", &input);
-	if (ret != 1)
-		return -EINVAL;
-
-	dbs_tuners_ins.freq_boost_time = input;
-	return count;
-}
-
-
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 				const char *buf, size_t count)
 {
 	int ret;
-	unsigned long val;
+	unsigned int input;
 
-	ret = kstrtoul(buf, 0, &val);
+	ret = sscanf(buf, "%u", &input);
 	if (ret < 0)
 		return ret;
+
+	if (input > 1)
+		dbs_tuners_ins.freq_boost_time = input;
+	else
+		dbs_tuners_ins.freq_boost_time = DEFAULT_FREQ_BOOST_TIME;
 
 	dbs_tuners_ins.boosted = 1;
 	freq_boosted_time = ktime_to_us(ktime_get());
@@ -808,7 +797,6 @@ define_one_global_rw(up_threshold_any_cpu_load);
 define_one_global_rw(sync_freq);
 define_one_global_rw(load_tuning);
 define_one_global_rw(boostpulse);
-define_one_global_rw(boosttime);
 define_one_global_rw(boostfreq);
 
 static struct attribute *dbs_attributes[] = {
@@ -826,7 +814,6 @@ static struct attribute *dbs_attributes[] = {
 	&sync_freq.attr,
 	&load_tuning.attr,
 	&boostpulse.attr,
-	&boosttime.attr,
 	&boostfreq.attr,
 	NULL
 };
