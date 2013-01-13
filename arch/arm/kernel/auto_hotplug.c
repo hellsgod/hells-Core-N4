@@ -1,6 +1,5 @@
 /* Copyright (c) 2012, Will Tisdale <willtisdale@gmail.com>. All rights reserved.
- *
- * 2012 Enhanced by motley <motley.slate@gmail.com>
+ * Copyright (c) 2013 enhanced by motley <motley.slate@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -35,6 +34,7 @@
 #include <linux/cpu.h>
 #include <linux/workqueue.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
@@ -46,8 +46,8 @@
  * SAMPLING_PERIODS * MIN_SAMPLING_RATE is the minimum
  * load history which will be averaged
  */
-#define SAMPLING_PERIODS	10
-#define INDEX_MAX_VALUE		(SAMPLING_PERIODS - 1)
+#define DEFAULT_SAMPLING_PERIODS	12
+
 /*
  * DEFAULT_MIN_SAMPLING_RATE is the base minimum sampling rate
  * that is based on num_online_cpus()
@@ -56,15 +56,15 @@
 
 /*
  * Load defines:
- * DEFAULT_ENABLE_ALL is a default high watermark to rapidly online all CPUs
+ * DEFAULT_ENABLE_ALL_LOAD_THRESHOLD is a default high watermark to rapidly online all CPUs
  *
  * DEFAULT_ENABLE_LOAD_THRESHOLD is the default load which is required to enable 1 extra CPU
  * DEFAULT_DISABLE_LOAD_THRESHOLD is the default load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	500  //(125 * CPUS_AVAILABLE)
+#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	(125 * CPUS_AVAILABLE)
 #define DEFAULT_ENABLE_LOAD_THRESHOLD		200
-#define DEFAULT_DISABLE_LOAD_THRESHOLD		60
+#define DEFAULT_DISABLE_LOAD_THRESHOLD		80
 
 /* Control flags */
 unsigned char flags;
@@ -77,15 +77,16 @@ unsigned char flags;
  * Enable debug output to dump the average
  * calculations and ring buffer array values
  * WARNING: Enabling this causes a ton of overhead
- * FIXME: Turn it into debugfs stats (somehow)
- * because currently it is a sack of shit.
  */
 static unsigned int debug = 0;
 
-static unsigned int enable_all_load_threshold = DEFAULT_ENABLE_ALL_LOAD_THRESHOLD;
+static unsigned int enable_all_load_threshold;
 static unsigned int enable_load_threshold = DEFAULT_ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DEFAULT_DISABLE_LOAD_THRESHOLD;
 static unsigned int min_sampling_rate = DEFAULT_MIN_SAMPLING_RATE;
+static unsigned int sampling_periods = DEFAULT_SAMPLING_PERIODS;
+static unsigned int live_sampling_periods = DEFAULT_SAMPLING_PERIODS;
+static unsigned int index_max_value  = (DEFAULT_SAMPLING_PERIODS - 1);
 
 struct delayed_work hotplug_decision_work;
 struct delayed_work hotplug_unpause_work;
@@ -95,14 +96,160 @@ struct delayed_work hotplug_offline_work;
 struct work_struct hotplug_offline_all_work;
 struct work_struct hotplug_boost_online_work;
 
-static unsigned int history[SAMPLING_PERIODS];
+static unsigned int *history;
 static unsigned int index;
 
-module_param(enable_all_load_threshold, int, 0775);
-module_param(enable_load_threshold, int, 0775);
-module_param(disable_load_threshold, int, 0775);
-module_param(min_sampling_rate, int, 0775);
-module_param(debug, int, 0775);
+static int set_enable_all_load_threshold(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	long num;
+
+	if (!val)
+		return -EINVAL;
+
+	ret = strict_strtol(val, 0, &num);
+	if (ret == -EINVAL || num > 550 || num < 270)
+		return -EINVAL;
+
+	ret = param_set_int(val, kp);
+	pr_info("auto_hotplug: enable_all_load_threshold = %d\n", enable_all_load_threshold);
+
+	return ret;
+}
+
+static int set_enable_load_threshold(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	long num;
+
+	if (!val)
+		return -EINVAL;
+
+	ret = strict_strtol(val, 0, &num);
+	if (ret == -EINVAL || num > 250 || num < 130)
+		return -EINVAL;
+
+	ret = param_set_int(val, kp);
+
+	pr_info("auto_hotplug: enable_load_threshold = %d\n", enable_load_threshold);
+
+	return ret;
+}
+
+static int set_disable_load_threshold(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	long num;
+
+	if (!val)
+		return -EINVAL;
+
+	ret = strict_strtol(val, 0, &num);
+	if (ret == -EINVAL || num > 125 || num < 40)
+		return -EINVAL;
+
+	ret = param_set_int(val, kp);
+
+	pr_info("auto_hotplug: disable_load_threshold = %d\n", disable_load_threshold);
+
+	return ret;
+}
+
+static int set_min_sampling_rate(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	long num;
+
+	if (!val)
+		return -EINVAL;
+
+	ret = strict_strtol(val, 0, &num);
+	if (ret == -EINVAL || num > 50 || num < 10)
+		return -EINVAL;
+
+	ret = param_set_int(val, kp);
+
+	pr_info("auto_hotplug: min_sampling_rate = %d\n", min_sampling_rate);
+
+	return ret;
+}
+
+static int set_debug(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+
+	ret = param_set_bool(val, kp);
+	pr_info("auto_hotplug: debug = %d\n", debug);
+
+	return ret;
+}
+
+static int set_sampling_periods(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	long num;
+
+	if (!val)
+		return -EINVAL;
+
+	ret = strict_strtol(val, 0, &num);
+	if (ret == -EINVAL || num > 50 || num < 5)
+		return -EINVAL;
+
+	ret = param_set_int(val, kp);
+
+	pr_info("auto_hotplug: sampling_periods = %d\n", sampling_periods);
+
+	return ret;
+}
+
+static struct kernel_param_ops module_ops_enable_all_load_threshold = {
+	.set = set_enable_all_load_threshold,
+	.get = param_get_uint,
+};
+
+static struct kernel_param_ops module_ops_enable_load_threshold = {
+	.set = set_enable_load_threshold,
+	.get = param_get_uint,
+};
+
+static struct kernel_param_ops module_ops_disable_load_threshold = {
+	.set = set_disable_load_threshold,
+	.get = param_get_uint,
+};
+
+static struct kernel_param_ops module_ops_min_sampling_rate = {
+	.set = set_min_sampling_rate,
+	.get = param_get_uint,
+};
+
+static struct kernel_param_ops module_ops_debug = {
+	.set = set_debug,
+	.get = param_get_bool,
+};
+
+static struct kernel_param_ops module_ops_sampling_periods = {
+	.set = set_sampling_periods,
+	.get = param_get_uint,
+};
+
+module_param_cb(enable_all_load_threshold, &module_ops_enable_all_load_threshold, &enable_all_load_threshold, 0775);
+MODULE_PARM_DESC(enable_all_load_threshold, "auto_hotplug load threshold to rapidly online all CPUs (270-550)");
+
+module_param_cb(enable_load_threshold, &module_ops_enable_load_threshold, &enable_load_threshold, 0775);
+MODULE_PARM_DESC(enable_load_threshold, "auto_hotplug load threshold to enable one CPU (130-250)");
+
+module_param_cb(disable_load_threshold, &module_ops_disable_load_threshold, &disable_load_threshold, 0775);
+MODULE_PARM_DESC(disable_load_threshold, "auto_hotplug load threshold to disable one CPU (40-125)");
+
+module_param_cb(min_sampling_rate, &module_ops_min_sampling_rate, &min_sampling_rate, 0775);
+MODULE_PARM_DESC(min_sampling_rate, "auto_hotplug minimum sampling rate (10-50ms)");
+
+module_param_cb(debug, &module_ops_debug, &debug, 0775);
+MODULE_PARM_DESC(enabled, "auto_hotplug debug to kernel log (Y/N)");
+
+module_param_cb(sampling_periods, &module_ops_sampling_periods, &sampling_periods, 0775);
+MODULE_PARM_DESC(sampling_periods, "auto_hotplug history sampling periods (5-50)");
 
 static void hotplug_decision_work_fn(struct work_struct *work)
 {
@@ -111,12 +258,26 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	unsigned int k;
 	unsigned long sampling_rate = 0;
 	unsigned long min_sampling_rate_in_jiffies = 0;
+	void __iomem **new_sample_size;
 
 	min_sampling_rate_in_jiffies = msecs_to_jiffies(min_sampling_rate);
 	online_cpus = num_online_cpus();
 	available_cpus = CPUS_AVAILABLE;
 	disable_load = disable_load_threshold * online_cpus;
 	enable_load = enable_load_threshold * online_cpus;
+
+	if (live_sampling_periods != sampling_periods) {
+		new_sample_size = krealloc(history,live_sampling_periods*sizeof(int),GFP_KERNEL);
+		if (!new_sample_size) {
+			pr_info("live sampling periods reallocation failed.");
+		} else {
+			live_sampling_periods = sampling_periods;
+			index_max_value = live_sampling_periods - 1;
+			if (debug)
+				pr_info("live sampling periods changed: %d\n",live_sampling_periods);
+		}
+	}
+
 	/*
 	 * Multiply nr_running() by 100 so we don't have to
 	 * use fp division to get the average.
@@ -126,11 +287,9 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	history[index] = running;
 
 	if (debug) {
-		pr_info("online_cpus is: %d\n", online_cpus);
-		pr_info("enable_load is: %d\n", enable_load);
-		pr_info("disable_load is: %d\n", disable_load);
-		pr_info("index is: %d\n", index);
-		pr_info("running is: %d\n", running);
+		pr_info("online_cpus: %d\n", online_cpus);
+		pr_info("enable_load: %d, disable_load:%d\n", enable_load, disable_load);
+		pr_info("curr index: %d, curr load:%d\n", index, running);
 	}
 
 	/*
@@ -140,31 +299,29 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 	 * we don't want additional cores to be onlined because
 	 * the cpufreq driver should take care of those load spikes.
 	 */
-	for (i = 0, j = index; i < SAMPLING_PERIODS; i++, j--) {
+	for (i = 0, j = index; i < live_sampling_periods; i++, j--) {
 		avg_running += history[j];
 		if (unlikely(j == 0))
-			j = INDEX_MAX_VALUE;
+			j = index_max_value;
 	}
 
 	/*
 	 * If we are at the end of the buffer, return to the beginning.
 	 */
-	if (unlikely(index++ == INDEX_MAX_VALUE))
+	if (unlikely(index++ == index_max_value))
 		index = 0;
 
 	if (debug) {
-		pr_info("array contents: ");
-		for (k = 0; k < SAMPLING_PERIODS; k++) {
+		pr_info("load samples: %d\n",live_sampling_periods);
+		for (k = 0; k < live_sampling_periods; k++) {
 			 pr_info("%d: %d\t",k, history[k]);
 		}
-		pr_info("\n");
-		pr_info("avg_running before division: %d\n", avg_running);
 	}
 
-	avg_running = avg_running / SAMPLING_PERIODS;
+	avg_running = avg_running / live_sampling_periods;
 
 	if (debug)
-		pr_info("average_running is: %d\n", avg_running);
+		pr_info("average load: %d\n", avg_running);
 
 	if (likely(!(flags & HOTPLUG_DISABLED))) {
 		if (unlikely((avg_running >= enable_all_load_threshold) && (online_cpus < available_cpus))) {
@@ -306,7 +463,7 @@ void hotplug_disable(bool flag)
 	}
 }
 
-inline void hotplug_boostpulse(void)
+void hotplug_boostpulse(void)
 {
 	if (unlikely(flags & (EARLYSUSPEND_ACTIVE
 		| HOTPLUG_DISABLED)))
@@ -377,8 +534,14 @@ static struct early_suspend auto_hotplug_suspend = {
 int __init auto_hotplug_init(void)
 {
 	pr_info("auto_hotplug: v0.220 by _thalamus\n");
-	pr_info("auto_hotplug: rev 1 enhanced by motley\n");
+	pr_info("auto_hotplug: rev 2 enhanced by motley\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
+
+	/* Init circular buffer for history to the default default size */
+	history = kmalloc(live_sampling_periods * sizeof(int),GFP_KERNEL);
+
+	/* Placing this here to avoid a compiler warning */
+	enable_all_load_threshold = DEFAULT_ENABLE_ALL_LOAD_THRESHOLD;
 
 	INIT_DELAYED_WORK(&hotplug_decision_work, hotplug_decision_work_fn);
 	INIT_DELAYED_WORK_DEFERRABLE(&hotplug_unpause_work, hotplug_unpause_work_fn);
