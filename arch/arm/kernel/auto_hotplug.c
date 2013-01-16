@@ -87,6 +87,7 @@ static unsigned int min_sampling_rate = DEFAULT_MIN_SAMPLING_RATE;
 static unsigned int sampling_periods = DEFAULT_SAMPLING_PERIODS;
 static unsigned int live_sampling_periods = DEFAULT_SAMPLING_PERIODS;
 static unsigned int index_max_value  = (DEFAULT_SAMPLING_PERIODS - 1);
+static unsigned int min_online_cpus = 1;
 
 struct delayed_work hotplug_decision_work;
 struct delayed_work hotplug_unpause_work;
@@ -203,6 +204,27 @@ static int set_sampling_periods(const char *val, const struct kernel_param *kp)
 	return ret;
 }
 
+static int min_online_cpus_fn_set(const char *arg, const struct kernel_param *kp)
+{
+    int ret; 
+    
+    ret = param_set_int(arg, kp);
+    
+    ///at least 1 core must run even if set value is out of range
+    if ((min_online_cpus < 1) || (min_online_cpus > CPUS_AVAILABLE))
+        min_online_cpus = 1;
+    
+    //online all cores and offline them based on set value
+    schedule_work(&hotplug_online_all_work);
+        
+    return ret;
+}
+
+static struct kernel_param_ops min_online_cpus_ops = {
+    .set = min_online_cpus_fn_set,
+    .get = param_get_uint,
+};
+
 static struct kernel_param_ops module_ops_enable_all_load_threshold = {
 	.set = set_enable_all_load_threshold,
 	.get = param_get_uint,
@@ -250,6 +272,9 @@ MODULE_PARM_DESC(enabled, "auto_hotplug debug to kernel log (Y/N)");
 
 module_param_cb(sampling_periods, &module_ops_sampling_periods, &sampling_periods, 0775);
 MODULE_PARM_DESC(sampling_periods, "auto_hotplug history sampling periods (5-50)");
+
+module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0775);
+MODULE_PARM_DESC(min_online_cpus, "auto_hotplug min_online_cpus (1-#CPUs)");
 
 static void hotplug_decision_work_fn(struct work_struct *work)
 {
@@ -351,7 +376,7 @@ static void hotplug_decision_work_fn(struct work_struct *work)
 				cancel_delayed_work(&hotplug_offline_work);
 			schedule_work(&hotplug_online_single_work);
 			return;
-		} else if (avg_running <= disable_load) {
+		} else if ((avg_running <= disable_load) && (min_online_cpus < online_cpus)) {
 			/* Only queue a cpu_down() if there isn't one already pending */
 			if (!(delayed_work_pending(&hotplug_offline_work))) {
 				if (debug)
