@@ -35,6 +35,7 @@
 #include <linux/buffer_head.h> /* __set_page_dirty_buffers */
 #include <linux/pagevec.h>
 #include <trace/events/writeback.h>
+#include <linux/earlysuspend.h>
 
 /*
  * Sleep at most 200ms at a time in balance_dirty_pages().
@@ -53,6 +54,8 @@
 #define BANDWIDTH_INTERVAL	200
 
 #define RATELIMIT_CALC_SHIFT	10
+
+bool resume = true;
 
 /*
  * After a CPU has dirtied this many pages, balance_dirty_pages_ratelimited
@@ -93,7 +96,7 @@ unsigned long vm_dirty_bytes;
 /*
  * The interval between `kupdate'-style writebacks
  */
-unsigned int dirty_writeback_interval = 5 * 100; /* centiseconds */
+unsigned int dirty_writeback_interval = 0; /* centiseconds */
 
 EXPORT_SYMBOL_GPL(dirty_writeback_interval);
 
@@ -1607,6 +1610,21 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
 	.next		= NULL,
 };
 
+static void dirty_early_suspend(struct early_suspend *handler)
+{
+	dirty_writeback_interval = 5 * 100;
+}
+
+static void dirty_late_resume(struct early_suspend *handler)
+{
+	dirty_writeback_interval = 0;
+}
+
+static struct early_suspend dirty_suspend = {
+	.suspend = dirty_early_suspend,
+	.resume = dirty_late_resume,
+};
+
 /*
  * Called early on to tune the page writeback dirty limits.
  *
@@ -1628,6 +1646,8 @@ static struct notifier_block __cpuinitdata ratelimit_nb = {
 void __init page_writeback_init(void)
 {
 	int shift;
+	
+	register_early_suspend(&dirty_suspend);
 
 	writeback_set_ratelimit();
 	register_cpu_notifier(&ratelimit_nb);
