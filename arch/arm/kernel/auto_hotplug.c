@@ -224,9 +224,9 @@ static int max_online_cpus_set(const char *arg, const struct kernel_param *kp)
 
     ret = param_set_int(arg, kp);
 
-    ///at least 1 core must run even if set value is out of range
+    ///default to cpus available if set value is out of range
     if ((max_online_cpus < 1) || (max_online_cpus > CPUS_AVAILABLE))
-        max_online_cpus = 1;
+        max_online_cpus = CPUS_AVAILABLE;
 
     return ret;
 }
