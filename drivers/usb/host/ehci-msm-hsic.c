@@ -35,6 +35,7 @@
 #include <linux/usb/msm_hsusb.h>
 #include <linux/gpio.h>
 #include <linux/spinlock.h>
+#include <linux/irq.h>
 #include <linux/kthread.h>
 #include <linux/wait.h>
 #include <linux/pm_qos.h>
