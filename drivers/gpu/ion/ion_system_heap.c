@@ -112,7 +112,7 @@ void *ion_system_heap_map_kernel(struct ion_heap *heap,
 
 		for_each_sg(table->sgl, sg, table->nents, i)
 			pages[i] = sg_page(sg);
-		vaddr = vmap(pages, table->nents, VM_MAP, PAGE_KERNEL);
+		vaddr = vmap(pages, table->nents, VM_MAP, pgprot_writecombine(PAGE_KERNEL));
 		kfree(pages);
 
 		return vaddr;
