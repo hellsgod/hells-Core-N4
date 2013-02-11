@@ -46,7 +46,7 @@
  * SAMPLING_PERIODS * MIN_SAMPLING_RATE is the minimum
  * load history which will be averaged
  */
-#define DEFAULT_SAMPLING_PERIODS	12
+#define DEFAULT_SAMPLING_PERIODS	10
 
 /*
  * DEFAULT_MIN_SAMPLING_RATE is the base minimum sampling rate
@@ -62,7 +62,7 @@
  * DEFAULT_DISABLE_LOAD_THRESHOLD is the default load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	(125 * CPUS_AVAILABLE)
+#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE)
 #define DEFAULT_ENABLE_LOAD_THRESHOLD		200
 #define DEFAULT_DISABLE_LOAD_THRESHOLD		80
 
@@ -563,16 +563,17 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
+	int i = 0;
+
 	if (debug)
 		pr_info("auto_hotplug: late resume handler\n");
 
 	flags &= ~EARLYSUSPEND_ACTIVE;
 
 	//stack the deck, let's get moving again
-	history[0] = 500;
-	history[1] = 500;
-	history[3] = 500;
-	history[4] = 500;
+	for (i=0; i<5; i++) {
+		history[i] = 500;
+	}
 
 	schedule_delayed_work_on(0, &hotplug_decision_work, HZ/2);
 }
@@ -586,7 +587,7 @@ static struct early_suspend auto_hotplug_suspend = {
 int __init auto_hotplug_init(void)
 {
 	pr_info("auto_hotplug: v0.220 by _thalamus\n");
-	pr_info("auto_hotplug: rev 3 enhanced by motley\n");
+	pr_info("auto_hotplug: rev 4 enhanced by motley\n");
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
 
 	/* Init circular buffer for history to the default default size */
