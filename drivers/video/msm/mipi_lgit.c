@@ -555,10 +555,35 @@ static ssize_t kgamma_blue_show(struct device *dev, struct device_attribute *att
 		kgamma[8], kgamma[9]);
 }
 
+void refresh_screen_go (struct device *dev, struct device_attribute *attr,
+		char *buf) {
+
+	unsigned int i = 0;
+	int ret = 0;
+
+	sscanf(buf, "%i", &i);
+	if (i == 1) {
+		msleep(20);
+		MIPI_OUTP(MIPI_DSI_BASE + 0x38, 0x10000000);
+		ret = mipi_dsi_cmds_tx(&lgit_tx_buf,
+				new_color_vals,
+					mipi_lgit_pdata->power_on_set_size_1);
+			MIPI_OUTP(MIPI_DSI_BASE + 0x38, 0x14000000);
+			if (ret < 0)
+				pr_err("%s: failed to transmit power_on_set_1 cmds\n", __func__);
+	}
+}
+
+static ssize_t refresh_screen_show(struct device *dev, struct device_attribute *attr,
+								char *buf)
+{
+	return sprintf(buf, "%d", 0);
+}
+
 static DEVICE_ATTR(kgamma_red, 0644, kgamma_red_show, kgamma_red_store);
 static DEVICE_ATTR(kgamma_green, 0644, kgamma_green_show, kgamma_green_store);
 static DEVICE_ATTR(kgamma_blue, 0644, kgamma_blue_show, kgamma_blue_store);
-
+static DEVICE_ATTR(refresh_screen, 0644, refresh_screen_show, refresh_screen_go);
 /******************* end motley sysfs interface ********************/
 
 struct syscore_ops panel_syscore_ops = {
@@ -607,6 +632,9 @@ static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 	if(rc !=0)
 		return -1;
 	rc = device_create_file(&pdev->dev, &dev_attr_kgamma_blue);
+	if(rc !=0)
+		return -1;
+	rc = device_create_file(&pdev->dev, &dev_attr_refresh_screen);
 	if(rc !=0)
 		return -1;
 
