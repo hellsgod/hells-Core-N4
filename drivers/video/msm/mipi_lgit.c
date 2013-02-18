@@ -555,8 +555,8 @@ static ssize_t kgamma_blue_show(struct device *dev, struct device_attribute *att
 		kgamma[8], kgamma[9]);
 }
 
-void refresh_screen_go (struct device *dev, struct device_attribute *attr,
-		char *buf) {
+static ssize_t refresh_screen_go (struct device *dev, struct device_attribute *attr,
+                        const char *buf, size_t count) {
 
 	unsigned int i = 0;
 	int ret = 0;
@@ -572,6 +572,8 @@ void refresh_screen_go (struct device *dev, struct device_attribute *attr,
 			if (ret < 0)
 				pr_err("%s: failed to transmit power_on_set_1 cmds\n", __func__);
 	}
+    
+    return count;
 }
 
 static ssize_t refresh_screen_show(struct device *dev, struct device_attribute *attr,
