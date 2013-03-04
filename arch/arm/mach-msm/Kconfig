@@ -396,6 +396,7 @@ config  ARCH_MSM_SCORPION
 config  ARCH_MSM_KRAIT
 	bool
 	select ARM_L1_CACHE_SHIFT_6
+	select HAVE_EFFICIENT_UNALIGNED_ACCESS
 
 config  MSM_SMP
 	select HAVE_SMP
