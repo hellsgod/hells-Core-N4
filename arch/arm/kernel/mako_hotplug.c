@@ -221,7 +221,7 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
     stats.online_cpus = num_online_cpus();
 }
 
-static void __cpuinit mako_hotplug_late_resume(struct early_suspend *handler)
+static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 {
     unsigned int cpu = nr_cpu_ids;
     
