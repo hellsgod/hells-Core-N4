@@ -25,62 +25,73 @@
 #include <linux/of.h>
 #include <mach/cpufreq.h>
 
-/*
- * Poll for temperature changes every 2 seconds.
- * It will scale based on the device temperature.
- */
-unsigned int polling = HZ*2;
+#define DEFAULT_TEMP_MAX	85
 
-unsigned int temp_threshold = 70;
-module_param(temp_threshold, int, 0755);
+static unsigned int polling = HZ*2;
+static unsigned int cpu = 0;
+static unsigned int limit_idx;
+static unsigned int temp_max = DEFAULT_TEMP_MAX;
+module_param(temp_max, int, 0644);
+
+static uint32_t freq_max;
+static uint32_t freq_buffer;
 
 static struct msm_thermal_data msm_thermal_info;
 static struct delayed_work check_temp_work;
+static struct cpufreq_frequency_table *table;
 
-struct cpufreq_policy *policy = NULL;
+static void get_freq_table_limit_idx(void)
+{
+	int i = 0;
 
-uint32_t max_freq;
-uint32_t freq_buffer;
+	table = cpufreq_frequency_get_table(cpu);
+	while (table[i].frequency != CPUFREQ_TABLE_END)
+		i++;
+
+	limit_idx = i - 1;
+}
 
 static void check_temp(struct work_struct *work)
 {
-	struct tsens_device tsens_dev;
 	unsigned long temp = 0;
-	unsigned int cpu = 0;
-	policy = cpufreq_cpu_get(cpu);
-	max_freq = policy->max;
-	
+	struct tsens_device tsens_dev;
+
+	if (!limit_idx)
+		get_freq_table_limit_idx();
+
+	freq_max = table[limit_idx].frequency;
+
 	if (freq_buffer == 0)
-		freq_buffer = max_freq;
+		freq_buffer = freq_max;
 
 	tsens_dev.sensor_num = msm_thermal_info.sensor_id;
 	tsens_get_temp(&tsens_dev, &temp);
 
-	//device is really hot, it needs severe throttling even if it means a lag fest. Also poll faster        
-	if (temp >= (temp_threshold + 10)) {
-		max_freq = 702000;
+	if (temp > temp_max) {
+		freq_max = table[limit_idx - 8].frequency;
 		polling = HZ/8;
-	}
-	//temperature is high, lets throttle even more and poll faster (every .25s)
-	else if (temp >= temp_threshold) {
-		max_freq = 1026000;
+
+	} else if (temp > temp_max - 2) {
+		freq_max = table[limit_idx - 5].frequency;
 		polling = HZ/4;
-	} 
-	//the device is getting hot, lets throttle a little bit
-	else if (temp >= (temp_threshold - 5)) {
-		max_freq = 1188000;
-	} 
-	//the device is in safe temperature, polling is normal (every second)
-	else if (temp < (temp_threshold - 10)) {
+
+	} else if (temp > temp_max - 5) {
+		freq_max = table[limit_idx - 2].frequency;
+		polling = HZ/2;
+
+	} else if (temp > temp_max - 10) {
+		polling = HZ;
+
+	} else {
 		polling = HZ*2;
 	}
 
-	if (max_freq < freq_buffer || max_freq > freq_buffer) {
-		freq_buffer = max_freq;
-		for_each_possible_cpu(cpu) {
-			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, max_freq);
-			pr_info("msm_thermal: max cpu%d frequency changes to %dMHz - polling every %dms", cpu, max_freq/1000, jiffies_to_msecs(polling));
-		}
+	if (freq_buffer != freq_max) {
+		freq_buffer = freq_max;
+		for_each_possible_cpu(cpu)
+			msm_cpufreq_set_freq_limits(cpu, MSM_CPUFREQ_NO_LIMIT, freq_max);
+		pr_info("msm_thermal: CPU temp: %luC, max: %dMHz, polling: %dms",
+			temp, freq_max/1000, jiffies_to_msecs(polling));
 	}
 
 	schedule_delayed_work(&check_temp_work, polling);
@@ -93,6 +104,8 @@ int __devinit msm_thermal_init(struct msm_thermal_data *pdata)
 	BUG_ON(!pdata);
 	BUG_ON(pdata->sensor_id >= TSENS_MAX_SENSORS);
 	memcpy(&msm_thermal_info, pdata, sizeof(struct msm_thermal_data));
+
+	pr_info("msm_thermal: Maximum cpu temp: %dC", temp_max);
 
 	INIT_DELAYED_WORK(&check_temp_work, check_temp);
 	schedule_delayed_work(&check_temp_work, HZ*20);
