@@ -61,7 +61,7 @@ static void first_level_work_check(unsigned long temp_diff, unsigned long now)
 			if (cpu) {
 				if (!cpu_online(cpu)) {
 					cpu_up(cpu);
-					pr_info
+					pr_debug
 					    ("mako_hotplug: cpu%d is up - high load\n",
 					     cpu);
 				}
@@ -85,7 +85,7 @@ static void second_level_work_check(unsigned long temp_diff, unsigned long now)
 			if (cpu) {
 				if (!cpu_online(cpu)) {
 					cpu_up(cpu);
-					pr_info
+					pr_debug
 					    ("mako_hotplug: cpu%d is up - medium load\n",
 					     cpu);
 					break;
@@ -106,7 +106,7 @@ static void third_level_work_check(unsigned long temp_diff, unsigned long now)
 			if (cpu) {
 				if (cpu_online(cpu)) {
 					cpu_down(cpu);
-					pr_info
+					pr_debug
 					    ("mako_hotplug: cpu%d is down - low load\n",
 					     cpu);
 				}
@@ -196,7 +196,7 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 			if (cpu) {
 				if (cpu_online(cpu)) {
 					cpu_down(cpu);
-					pr_info
+					pr_debug
 					    ("mako_hotplug: Early suspend - cpu%d is down\n",
 					     cpu);
 				}
@@ -222,7 +222,7 @@ static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 		if (cpu) {
 			if (!cpu_online(cpu)) {
 				cpu_up(cpu);
-				pr_info
+				pr_debug
 				    ("mako_hotplug: Late resume - cpu%d is up\n",
 				     cpu);
 			}
