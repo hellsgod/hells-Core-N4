@@ -246,6 +246,7 @@ static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 static struct early_suspend mako_hotplug_suspend = {
 	.suspend = mako_hotplug_early_suspend,
 	.resume = mako_hotplug_late_resume,
+	.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN - 1,
 };
 
 static ssize_t load_levels_show(struct device *dev,
