@@ -191,6 +191,7 @@ static void __cpuinit decide_hotplug_func(struct work_struct *work)
 static void mako_hotplug_early_suspend(struct early_suspend *handler)
 {
 	unsigned int cpu = nr_cpu_ids;
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
 	/* cancel the hotplug work when the screen is off and flush the WQ */
 	flush_workqueue(wq);
@@ -213,7 +214,7 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 	cpufreq_governor_load_tuning(GOV_TUNE_SUSPEND);
 
 	/* cap max frequency to 702MHz by default */
-	msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, suspend_freq);
+	msm_cpufreq_set_freq_limits(0, policy->min, suspend_freq);
 	pr_info
 	    ("mako_hotplug: Early suspend - cpu%d max freq: %dMHz\n",
 	     0, suspend_freq / 1000);
@@ -224,6 +225,7 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 {
 	unsigned int cpu = nr_cpu_ids;
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
 	cpufreq_governor_load_tuning(GOV_TUNE_HIGH);
 
@@ -237,11 +239,10 @@ static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 				     cpu);
 			}
 		}
+		/* restore default max frequency */
+		msm_cpufreq_set_freq_limits(cpu, policy->min, policy->max);
 	}
 
-	/* restore default max frequency */
-	msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT,
-				    MSM_CPUFREQ_NO_LIMIT);
 	pr_info("mako_hotplug: Late resume - restore cpu%d max frequency.\n",
 		0);
 
@@ -273,7 +274,7 @@ static ssize_t load_levels_store(struct device *dev,
 	int i, ret = 0;
 	unsigned int val[3];
 
-	ret = sscanf(buf, "%u %u %u\n", &val[0], &val[1], &val[2]);
+	ret = sscanf(buf, "%u %u %u", &val[0], &val[1], &val[2]);
 	if (ret != ARRAY_SIZE(val))
 		return -EINVAL;
 
@@ -301,13 +302,15 @@ static ssize_t suspend_frequency_store(struct device *dev,
 {
 	unsigned int ret, val = 0;
 	unsigned int min_freq, max_freq;
-	struct cpufreq_policy *policy;
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
-	policy = cpufreq_cpu_get(0);
+	if (!policy)
+		return -EINVAL;
+
 	min_freq = policy->min;
 	max_freq = policy->max;
 
-	ret = sscanf(buf, "%u\n", &val);
+	ret = sscanf(buf, "%u", &val);
 	if (ret != 1 || val < min_freq || val > max_freq)
 		return -EINVAL;
 
