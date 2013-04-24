@@ -126,21 +126,24 @@ static void third_level_work_check(unsigned long temp_diff, unsigned long now)
 static void __cpuinit decide_hotplug_func(struct work_struct *work)
 {
 	unsigned long now;
-	unsigned int k, first_level, second_level, third_level;
-	static unsigned int load = 0;
+	unsigned int i, j, first_level, second_level, third_level, load = 0;
 
 	/* 
 	 * start feeding the current load to the history array so that we can
 	 * make a little average. Works good for filtering low and/or high load
 	 * spikes
 	 */
-	if (counter++ == HISTORY_SIZE)
-		counter = 0;
-
 	load_history[counter] = report_load_at_max_freq();
 
-	for (k = 0; k < HISTORY_SIZE; k++)
-		load += load_history[k];
+	for (i = 0, j = counter; i < HISTORY_SIZE; i++, j--) {
+		load += load_history[j];
+
+        if (j == 0)
+		j = HISTORY_SIZE;
+	}
+
+	if (++counter == HISTORY_SIZE)
+		counter = 0;
 
 	load = load / HISTORY_SIZE;
 	/* finish load routines */
