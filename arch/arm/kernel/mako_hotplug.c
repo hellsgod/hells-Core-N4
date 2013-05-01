@@ -57,6 +57,8 @@ static void first_level_work_check(unsigned long temp_diff, unsigned long now)
 	unsigned int cpu = nr_cpu_ids;
 
 	if ((now - stats.time_stamp) >= temp_diff) {
+		cpufreq_governor_load_tuning(GOV_TUNE_HIGH);
+
 		for_each_possible_cpu(cpu) {
 			if (cpu) {
 				if (!cpu_online(cpu)) {
@@ -81,6 +83,8 @@ static void second_level_work_check(unsigned long temp_diff, unsigned long now)
 	unsigned int cpu = nr_cpu_ids;
 
 	if (stats.online_cpus < 2 || (now - stats.time_stamp) >= temp_diff) {
+		cpufreq_governor_load_tuning(GOV_TUNE_MEDIUM);
+
 		for_each_possible_cpu(cpu) {
 			if (cpu) {
 				if (!cpu_online(cpu)) {
@@ -102,6 +106,8 @@ static void third_level_work_check(unsigned long temp_diff, unsigned long now)
 	unsigned int cpu = nr_cpu_ids;
 
 	if ((now - stats.time_stamp) >= temp_diff) {
+		cpufreq_governor_load_tuning(GOV_TUNE_LOW);
+
 		for_each_possible_cpu(cpu) {
 			if (cpu) {
 				if (cpu_online(cpu)) {
@@ -204,6 +210,8 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 		}
 	}
 
+	cpufreq_governor_load_tuning(GOV_TUNE_SUSPEND);
+
 	/* cap max frequency to 702MHz by default */
 	msm_cpufreq_set_freq_limits(0, MSM_CPUFREQ_NO_LIMIT, suspend_freq);
 	pr_info
@@ -216,6 +224,8 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 static void __ref mako_hotplug_late_resume(struct early_suspend *handler)
 {
 	unsigned int cpu = nr_cpu_ids;
+
+	cpufreq_governor_load_tuning(GOV_TUNE_HIGH);
 
 	/* online all cores when the screen goes online */
 	for_each_possible_cpu(cpu) {
