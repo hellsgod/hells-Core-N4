@@ -27,6 +27,9 @@
 #include <linux/input/mt.h>
 #include <linux/input/lge_touch_core.h>
 #include <linux/input/touch_synaptics.h>
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+#endif
 
 #include "SynaImage.h"
 #include <linux/regulator/machine.h>
@@ -179,6 +182,11 @@ int synaptics_ts_get_data(struct i2c_client *client, struct t_data* data,
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
 		TOUCH_DEBUG_MSG("\n");
+
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	if (s2w_switch)
+		msleep(ts->pdata->role->reset_delay);
+#endif
 
 	if (unlikely(touch_i2c_read(client, DEVICE_STATUS_REG,
 			sizeof(ts->ts_data.device_status_reg),
