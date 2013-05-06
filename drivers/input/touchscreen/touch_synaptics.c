@@ -184,7 +184,7 @@ int synaptics_ts_get_data(struct i2c_client *client, struct t_data* data,
 		TOUCH_DEBUG_MSG("\n");
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-	if (s2w_switch)
+	if (s2w_switch && scr_suspended)
 		msleep(ts->pdata->role->reset_delay);
 #endif
 
