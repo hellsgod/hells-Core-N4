@@ -185,7 +185,7 @@ int synaptics_ts_get_data(struct i2c_client *client, struct t_data* data,
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	if (s2w_switch && scr_suspended)
-		msleep(ts->pdata->role->reset_delay);
+		msleep(50);
 #endif
 
 	if (unlikely(touch_i2c_read(client, DEVICE_STATUS_REG,
@@ -576,6 +576,11 @@ int synaptics_ts_init(struct i2c_client* client, struct touch_fw_info* fw_info)
 
 	if (touch_debug_mask & DEBUG_TRACE)
 		TOUCH_DEBUG_MSG("\n");
+
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	if (s2w_switch && scr_suspended)
+		msleep(50);
+#endif
 
 	if (!ts->is_probed)
 		if (unlikely(get_ic_info(ts, fw_info) < 0))
