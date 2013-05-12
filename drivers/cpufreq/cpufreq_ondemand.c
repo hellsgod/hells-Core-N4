@@ -46,7 +46,7 @@
 #define DEFAULT_FREQ_BOOST_TIME			(500000)
 #define MAX_FREQ_BOOST_TIME				(5000000)
 
-u64 freq_boosted_time;
+static u64 freq_boosted_time;
 
 /*
  * The polling frequency of this governor depends on the capability of
