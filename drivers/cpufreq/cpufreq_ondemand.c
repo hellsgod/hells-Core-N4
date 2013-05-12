@@ -164,6 +164,7 @@ static struct dbs_tuners {
 	unsigned int sampling_down_factor;
 	int          powersave_bias;
 	unsigned int io_is_busy;
+	unsigned int load_tuning;
 } dbs_tuners_ins = {
 	.up_threshold_multi_core = DEF_FREQUENCY_UP_THRESHOLD,
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -359,6 +360,24 @@ static ssize_t show_powersave_bias
 (struct kobject *kobj, struct attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", dbs_tuners_ins.powersave_bias);
+}
+
+static ssize_t show_load_tuning
+(struct kobject *kobj, struct attribute *attr, char *buf)
+{
+	int i, j, len = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(gov_tunables); i++) {
+		len += sprintf(buf + len, "%d ", i);
+		for (j = 0; j < 3; j++)
+			len += sprintf(buf + len, "%d ", gov_tunables[i][j]);
+		len += sprintf(buf + len, "\n");
+	}
+
+	return len;
 }
 
 /**
@@ -688,6 +707,32 @@ skip_this_cpu_bypass:
 	return count;
 }
 
+static ssize_t store_load_tuning(struct kobject *a, struct attribute *b,
+				 const char *buf, size_t count)
+{
+	unsigned int input;
+	char size[ARRAY_SIZE(gov_tunables)];
+	int i, row = 0, ret = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < 4; i++) {
+		ret = sscanf(buf, "%d\n", &input);
+		if (!ret)
+			return -EINVAL;
+
+		if (i == 0)
+			row = input;
+		else
+			gov_tunables[row][i - 1] = input;
+
+		ret = sscanf(buf, "%s\n", size);
+		buf += strlen(size) + 1;
+	}
+	return ret;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(io_is_busy);
 define_one_global_rw(up_threshold);
@@ -699,6 +744,7 @@ define_one_global_rw(up_threshold_multi_core);
 define_one_global_rw(optimal_freq);
 define_one_global_rw(up_threshold_any_cpu_load);
 define_one_global_rw(sync_freq);
+define_one_global_rw(load_tuning);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -713,6 +759,7 @@ static struct attribute *dbs_attributes[] = {
 	&optimal_freq.attr,
 	&up_threshold_any_cpu_load.attr,
 	&sync_freq.attr,
+	&load_tuning.attr,
 	NULL
 };
 
