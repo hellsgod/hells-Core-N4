@@ -158,8 +158,12 @@ int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 	};
 
 	if (i2c_transfer(client->adapter, msgs, 2) < 0) {
-		if (printk_ratelimit())
-			TOUCH_ERR_MSG("transfer error\n");
+		if (printk_ratelimit()) {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+			if (!scr_suspended || retry_cnt > 1)
+#endif
+				TOUCH_ERR_MSG("transfer error\n");
+		}
 		return -EIO;
 	} else {
 		return 0;
