@@ -220,6 +220,7 @@ void unlock_policy_rwsem_write(int cpu);
 extern int cpufreq_governor_load_tuning(unsigned int);
 extern int cpufreq_ondemand_load_tuning(unsigned int);
 extern int cpufreq_interactive_load_tuning(unsigned int);
+extern int cpufreq_conservative_load_tuning(unsigned int);
 
 /*********************************************************************
  *                      CPUFREQ DRIVER INTERFACE                     *
