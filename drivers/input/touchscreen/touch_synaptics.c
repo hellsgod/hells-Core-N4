@@ -184,8 +184,20 @@ int synaptics_ts_get_data(struct i2c_client *client, struct t_data* data,
 		TOUCH_DEBUG_MSG("\n");
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-	if (s2w_switch && scr_suspended)
-		msleep(50);
+	if (s2w_switch && scr_suspended) {
+		while (touch_i2c_read(client, DEVICE_STATUS_REG,
+				sizeof(ts->ts_data.device_status_reg),
+				&ts->ts_data.device_status_reg) < 0
+				&& retry_cnt < S2W_I2C_MAX_COUNT) {
+			retry_cnt++;
+			msleep(S2W_I2C_DELAY);
+		}
+	}
+
+	/* One loop is expected */
+	if (retry_cnt > 1 && retry_cnt < S2W_I2C_MAX_COUNT)
+		TOUCH_INFO_MSG("i2c awake after %dms\n",
+				retry_cnt * S2W_I2C_DELAY);
 #endif
 
 	if (unlikely(touch_i2c_read(client, DEVICE_STATUS_REG,
@@ -194,6 +206,10 @@ int synaptics_ts_get_data(struct i2c_client *client, struct t_data* data,
 		TOUCH_ERR_MSG("DEVICE_STATUS_REG read fail\n");
 		goto err_synaptics_getdata;
 	}
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else
+		retry_cnt = 0;
+#endif
 
 	/* ESD damage check */
 	if ((ts->ts_data.device_status_reg & DEVICE_FAILURE_MASK) ==
