@@ -2192,11 +2192,11 @@ static int touch_probe(struct i2c_client *client,
 	/* accuracy solution */
 	if (ts->pdata->role->accuracy_filter_enable) {
 		ts->accuracy_filter.ignore_pressure_gap = 5;
-		ts->accuracy_filter.delta_max = 100;
-		ts->accuracy_filter.max_pressure = 255;
-		ts->accuracy_filter.time_to_max_pressure = one_sec / 25;
-		ts->accuracy_filter.direction_count = one_sec / 8;
-		ts->accuracy_filter.touch_max_count = one_sec / 3;
+		ts->accuracy_filter.delta_max = 50;
+		ts->accuracy_filter.max_pressure = 55;
+		ts->accuracy_filter.time_to_max_pressure = 1;
+		ts->accuracy_filter.direction_count = 8;
+		ts->accuracy_filter.touch_max_count = 4;
 	}
 
 	setup_timer(&boost_timer, handle_boost, 0);
