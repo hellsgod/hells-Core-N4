@@ -197,8 +197,10 @@ static int cpufreq_stats_create_table(struct cpufreq_policy *policy,
 	struct cpufreq_policy *data;
 	unsigned int alloc_size;
 	unsigned int cpu = policy->cpu;
+
 	if (per_cpu(cpufreq_stats_table, cpu))
-		return -EBUSY;
+		return 0;
+
 	stat = kzalloc(sizeof(struct cpufreq_stats), GFP_KERNEL);
 	if ((stat) == NULL)
 		return -ENOMEM;
@@ -276,7 +278,7 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 		return 0;
 	ret = cpufreq_stats_create_table(policy, table);
 	if (ret)
-		return ret;
+		pr_debug("%s: create table failed, ret=%d\n", __func__, ret);
 	return 0;
 }
 

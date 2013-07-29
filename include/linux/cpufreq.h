@@ -22,6 +22,8 @@
 #include <asm/div64.h>
 
 #define CPUFREQ_NAME_LEN 16
+/* Print length for names. Extra 1 space for accomodating '\n' in prints */
+#define CPUFREQ_NAME_PLEN (CPUFREQ_NAME_LEN + 1)
 
 
 /*********************************************************************
@@ -173,6 +175,13 @@ static inline unsigned long cpufreq_scale(unsigned long old, u_int div, u_int mu
 #define CPUFREQ_GOV_STOP   2
 #define CPUFREQ_GOV_LIMITS 3
 
+enum {
+	GOV_TUNE_SUSPEND,
+	GOV_TUNE_LOW,
+	GOV_TUNE_MEDIUM,
+	GOV_TUNE_HIGH
+};
+
 struct cpufreq_governor {
 	char	name[CPUFREQ_NAME_LEN];
 	int	(*governor)	(struct cpufreq_policy *policy,
@@ -207,6 +216,11 @@ void cpufreq_unregister_governor(struct cpufreq_governor *governor);
 
 int lock_policy_rwsem_write(int cpu);
 void unlock_policy_rwsem_write(int cpu);
+
+extern int cpufreq_governor_load_tuning(unsigned int);
+extern int cpufreq_ondemand_load_tuning(unsigned int);
+extern int cpufreq_interactive_load_tuning(unsigned int);
+extern int cpufreq_conservative_load_tuning(unsigned int);
 
 /*********************************************************************
  *                      CPUFREQ DRIVER INTERFACE                     *
@@ -363,6 +377,9 @@ extern struct cpufreq_governor cpufreq_gov_performance;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE)
 extern struct cpufreq_governor cpufreq_gov_powersave;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_powersave)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_WHEATLEY)
+extern struct cpufreq_governor cpufreq_gov_wheatley;
+#define CPUFREQ_DEFAULT_GOVERNOR  (&cpufreq_gov_wheatley)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE)
 extern struct cpufreq_governor cpufreq_gov_userspace;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_userspace)
@@ -375,6 +392,12 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE)
 extern struct cpufreq_governor cpufreq_gov_interactive;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactive)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND)
+extern struct cpufreq_governor cpufreq_gov_intellidemand;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_intellidemand)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTMAX)
+extern struct cpufreq_governor cpufreq_gov_smartmax;
+#define CPUFREQ_DEFAULT_GOVERNOR  	(&cpufreq_gov_smartmax)
 #endif
 
 
