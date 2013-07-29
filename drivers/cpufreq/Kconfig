@@ -123,6 +123,12 @@ config CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND
 	  Use the CPUFreq governor 'intellidemand' as default. This is
 	  based on Ondemand with browsing detection based on GPU loading
 
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX
+	bool "smartmax"
+	select CPU_FREQ_GOV_SMARTMAX
+	help
+	  Use the CPUFreq governor 'smartmax' as default  
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -268,6 +274,12 @@ config CPUFREQ_ID_PERFLOCK
 	default n
 	help
 		Minimum CPU performance lock for Intellidemand governor
+
+config CPU_FREQ_GOV_SMARTMAX
+	tristate "'smartmax' cpufreq policy governor"
+	select CPU_FREQ_TABLE
+	help
+	  'smartmax' combined ondemand and smartass2 
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
