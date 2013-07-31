@@ -273,7 +273,13 @@ static void tz_sleep(struct kgsl_device *device,
 {
 	struct tz_priv *priv = pwrscale->priv;
 
-	__secure_tz_entry(TZ_RESET_ID, 0, device->id);
+     /*
+      * Why in the hell were we calling a secure_tz func sleeping the device
+      * at 320MHz on the GPU? Makes no sense to me. Lets change the pwrlevel
+      * directly and sleep at its lowest frequency 128MHz.
+      */
+
+	kgsl_pwrctrl_pwrlevel_change(device, 3);
 	priv->no_switch_cnt = 0;
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
