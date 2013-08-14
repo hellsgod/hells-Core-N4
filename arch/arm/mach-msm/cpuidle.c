@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -14,7 +14,6 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/cpuidle.h>
-#include <linux/cpu_pm.h>
 
 #include <mach/cpuidle.h>
 
@@ -76,8 +75,6 @@ static int msm_cpuidle_enter(
 	enum msm_pm_sleep_mode pm_mode;
 	struct cpuidle_state_usage *st_usage = NULL;
 
-	cpu_pm_enter();
-
 	pm_mode = msm_pm_idle_prepare(dev, drv, index);
 	dev->last_residency = msm_pm_idle_enter(pm_mode);
 	for (i = 0; i < dev->state_count; i++) {
@@ -89,7 +86,7 @@ static int msm_cpuidle_enter(
 		}
 	}
 
-	cpu_pm_exit();
+
 	local_irq_enable();
 
 	return ret;
