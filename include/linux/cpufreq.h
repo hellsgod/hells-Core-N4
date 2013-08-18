@@ -217,6 +217,8 @@ void cpufreq_unregister_governor(struct cpufreq_governor *governor);
 int lock_policy_rwsem_write(int cpu);
 void unlock_policy_rwsem_write(int cpu);
 
+extern int lge_boosted;
+
 extern int cpufreq_governor_load_tuning(unsigned int);
 extern int cpufreq_ondemand_load_tuning(unsigned int);
 extern int cpufreq_interactive_load_tuning(unsigned int);
