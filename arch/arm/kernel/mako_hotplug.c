@@ -56,10 +56,6 @@ static void first_level_work_check(unsigned long temp_diff, unsigned long now)
 {
 	unsigned int cpu = nr_cpu_ids;
 
-	/* lets bail if all cores are online */
-	if (stats.online_cpus == stats.total_cpus)
-		return;
-
 	if ((now - stats.time_stamp) >= temp_diff) {
 		cpufreq_governor_load_tuning(GOV_TUNE_HIGH);
 
@@ -86,10 +82,6 @@ static void second_level_work_check(unsigned long temp_diff, unsigned long now)
 {
 	unsigned int cpu = nr_cpu_ids;
 
-	/* lets bail if all cores are online */
-	if (stats.online_cpus == stats.total_cpus)
-		return;
-
 	if (stats.online_cpus < 2 || (now - stats.time_stamp) >= temp_diff) {
 		cpufreq_governor_load_tuning(GOV_TUNE_MEDIUM);
 
@@ -113,19 +105,17 @@ static void third_level_work_check(unsigned long temp_diff, unsigned long now)
 {
 	unsigned int cpu = nr_cpu_ids;
 
-	/* lets bail if all cores are offline */
-	if (stats.online_cpus == 1)
-		return;
-
 	if ((now - stats.time_stamp) >= temp_diff) {
 		cpufreq_governor_load_tuning(GOV_TUNE_LOW);
 
-		for_each_online_cpu(cpu) {
+		for_each_possible_cpu(cpu) {
 			if (cpu) {
-				cpu_down(cpu);
-				pr_debug
-					("mako_hotplug: cpu%d is down - low load\n",
-					 cpu);
+				if (cpu_online(cpu)) {
+					cpu_down(cpu);
+					pr_debug
+					    ("mako_hotplug: cpu%d is down - low load\n",
+					     cpu);
+				}
 			}
 		}
 
@@ -212,12 +202,14 @@ static void mako_hotplug_early_suspend(struct early_suspend *handler)
 	pr_info("mako_hotplug: Early suspend - stopping Hotplug work...");
 
 	if (num_online_cpus() > 1) {
-		for_each_online_cpu(cpu) {
+		for_each_possible_cpu(cpu) {
 			if (cpu) {
-				cpu_down(cpu);
-				pr_debug
-					("mako_hotplug: Early suspend - cpu%d is down\n",
-					 cpu);
+				if (cpu_online(cpu)) {
+					cpu_down(cpu);
+					pr_debug
+					    ("mako_hotplug: Early suspend - cpu%d is down\n",
+					     cpu);
+				}
 			}
 		}
 	}
