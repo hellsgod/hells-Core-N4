@@ -36,7 +36,7 @@ static unsigned int load_history[HISTORY_SIZE];
 static unsigned int counter;
 
 /* from msm_rq_stats */
-extern unsigned int report_load_at_max_freq(void);
+unsigned int report_load_at_max_freq(void);
 
 /*
  * TODO probably populate the struct with more relevant data
