@@ -175,13 +175,6 @@ static inline unsigned long cpufreq_scale(unsigned long old, u_int div, u_int mu
 #define CPUFREQ_GOV_STOP   2
 #define CPUFREQ_GOV_LIMITS 3
 
-enum {
-	GOV_TUNE_SUSPEND,
-	GOV_TUNE_LOW,
-	GOV_TUNE_MEDIUM,
-	GOV_TUNE_HIGH
-};
-
 struct cpufreq_governor {
 	char	name[CPUFREQ_NAME_LEN];
 	int	(*governor)	(struct cpufreq_policy *policy,
@@ -218,10 +211,6 @@ int lock_policy_rwsem_write(int cpu);
 void unlock_policy_rwsem_write(int cpu);
 
 extern int lge_boosted;
-
-extern int cpufreq_governor_load_tuning(unsigned int);
-extern int cpufreq_ondemand_load_tuning(unsigned int);
-extern int cpufreq_interactive_load_tuning(unsigned int);
 
 /*********************************************************************
  *                      CPUFREQ DRIVER INTERFACE                     *

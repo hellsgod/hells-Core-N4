@@ -70,29 +70,6 @@ static unsigned int min_sampling_rate;
 #define POWERSAVE_BIAS_MAXLEVEL			(1000)
 #define POWERSAVE_BIAS_MINLEVEL			(-1000)
 
-/* have the timer rate booted for this much time 2.5s*/
-#define TIMER_RATE_BOOST_TIME 2500000
-int sampling_rate_boosted;
-u64 sampling_rate_boosted_time;
-unsigned int current_sampling_rate;
-
-static unsigned int cur_tune_level;
-
-/*
- * up_threshold, sampling_rate, sampling_down_factor
- * medium level represents ondemand defaults
- */
-static unsigned int gov_tunables[4][3] = {
-	/* suspend */
-	{ 99, 120000, 1 },
-	/* low load */
-	{ 95, 80000, 1 },
-	/* medium load */
-	{ 95, 50000, 1 },
-	/* high load */
-	{ 80, 20000, 10 },
-};
-
 static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				unsigned int event);
@@ -323,21 +300,6 @@ static void ondemand_powersave_bias_init(void)
 	for_each_online_cpu(i) {
 		ondemand_powersave_bias_init_cpu(i);
 	}
-}
-
-int cpufreq_ondemand_load_tuning(unsigned int level)
-{
-	if (level == cur_tune_level)
-		return -1;
-
-	cur_tune_level = level;
-	pr_debug("cpufreq_ondemand: New tunelevel %d\n", level);
-
-	dbs_tuners_ins.up_threshold = gov_tunables[level][0];
-	dbs_tuners_ins.sampling_rate = gov_tunables[level][1];
-	dbs_tuners_ins.sampling_down_factor = gov_tunables[level][2];
-
-	return 0;
 }
 
 /************************** sysfs interface ************************/

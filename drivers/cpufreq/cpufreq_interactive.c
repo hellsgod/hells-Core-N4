@@ -99,6 +99,7 @@ static unsigned int default_above_hispeed_delay[] = {
 static spinlock_t above_hispeed_delay_lock;
 static unsigned int *above_hispeed_delay = default_above_hispeed_delay;
 static int nabove_hispeed_delay = ARRAY_SIZE(default_above_hispeed_delay);
+
 /* Non-zero means indefinite speed boost active */
 static int boost_val;
 /* Duration of a boot pulse in usecs */
@@ -114,22 +115,6 @@ static u64 boostpulse_endtime;
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 static bool io_is_busy;
-
-static unsigned int cur_tune_level;
-
-/*
- * go_hispeed_load, min_sample_time, timer_rate, above_hispeed_delay
- */
-static unsigned int gov_tunables[4][4] = {
-	/* suspend */
-	{ 99, 20, 80, 80 },
-	/* low load */
-	{ 99, 40, 40, 40 },
-	/* medium load */
-	{ 95, 60, 20, 20 },
-	/* high load */
-	{ 75, 80, 10, 10 },
-};
 
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
@@ -698,22 +683,6 @@ err_kfree:
 	kfree(tokenized_data);
 err:
 	return ERR_PTR(err);
-}
-
-int cpufreq_interactive_load_tuning(unsigned int level)
-{
-	if (level == cur_tune_level)
-		return -1;
-
-	cur_tune_level = level;
-	pr_debug("cpufreq_interactive: tuning level %d\n", level);
-
-	go_hispeed_load = gov_tunables[level][0];
-	min_sample_time = gov_tunables[level][1] * USEC_PER_MSEC;
-	timer_rate = gov_tunables[level][2] * USEC_PER_MSEC;
-	*above_hispeed_delay = gov_tunables[level][3] * USEC_PER_MSEC;
-
-	return 0;
 }
 
 static ssize_t show_target_loads(

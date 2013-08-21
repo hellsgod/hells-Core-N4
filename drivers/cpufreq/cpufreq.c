@@ -1757,22 +1757,7 @@ void cpufreq_unregister_governor(struct cpufreq_governor *governor)
 }
 EXPORT_SYMBOL_GPL(cpufreq_unregister_governor);
 
-int cpufreq_governor_load_tuning(unsigned int level)
-{
-	int ret = 0;
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
-	if (!policy)
-		return -EINVAL;
-
-	if (!strnicmp(policy->governor->name, "ondemand", CPUFREQ_NAME_LEN))
-		ret = cpufreq_ondemand_load_tuning(level);
-	else if (!strnicmp(policy->governor->name, "interactive", CPUFREQ_NAME_LEN))
-		ret = cpufreq_interactive_load_tuning(level);
-
-	return ret;
-}
-EXPORT_SYMBOL_GPL(cpufreq_governor_load_tuning);
 
 /*********************************************************************
  *                          POLICY INTERFACE                         *
