@@ -979,53 +979,6 @@ static ssize_t store_io_is_busy(struct kobject *kobj,
 static struct global_attr io_is_busy_attr = __ATTR(io_is_busy, 0644,
 		show_io_is_busy, store_io_is_busy);
 
-static ssize_t show_load_tuning(
-	struct kobject *kobj, struct attribute *attr, char *buf)
-{
-	int i, j, len = 0;
-
-	if (!buf)
-		return -EINVAL;
-
-	for (i = 0; i < ARRAY_SIZE(gov_tunables); i++) {
-		len += sprintf(buf + len, "%d ", i);
-		for (j = 0; j < 4; j++)
-			len += sprintf(buf + len, "%d ", gov_tunables[i][j]);
-		len += sprintf(buf + len, "\n");
-	}
-
-	return len;
-}
-
-static ssize_t store_load_tuning(
-	struct kobject *kobj, struct attribute *attr, const char *buf,
-	size_t count)
-{
-	unsigned int val;
-	char size[ARRAY_SIZE(gov_tunables)];
-	int i, row = 0, ret = 0;
-
-	if (!buf)
-		return -EINVAL;
-
-	for (i = 0; i < 5; i++) {
-		ret = sscanf(buf, "%d\n", &val);
-		if (!ret)
-			return -EINVAL;
-
-		if (i == 0)
-			row = val;
-		else
-			gov_tunables[row][i - 1] = val;
-
-		ret = sscanf(buf, "%s\n", size);
-		buf += strlen(size) + 1;
-	}
-	return ret;
-}
-
-define_one_global_rw(load_tuning);
-
 static struct attribute *interactive_attributes[] = {
 	&target_loads_attr.attr,
 	&above_hispeed_delay_attr.attr,
@@ -1038,7 +991,6 @@ static struct attribute *interactive_attributes[] = {
 	&boostpulse.attr,
 	&boostpulse_duration.attr,
 	&io_is_busy_attr.attr,
-	&load_tuning.attr,
 	NULL,
 };
 
