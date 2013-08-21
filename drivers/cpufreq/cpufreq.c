@@ -1769,8 +1769,6 @@ int cpufreq_governor_load_tuning(unsigned int level)
 		ret = cpufreq_ondemand_load_tuning(level);
 	else if (!strnicmp(policy->governor->name, "interactive", CPUFREQ_NAME_LEN))
 		ret = cpufreq_interactive_load_tuning(level);
-	if (!strnicmp(policy->governor->name, "conservative", CPUFREQ_NAME_LEN))
-		ret = cpufreq_conservative_load_tuning(level);
 
 	return ret;
 }
