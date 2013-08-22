@@ -87,7 +87,7 @@ static unsigned int min_sampling_rate = DEFAULT_MIN_SAMPLING_RATE;
 static unsigned int sampling_periods = DEFAULT_SAMPLING_PERIODS;
 static unsigned int live_sampling_periods = DEFAULT_SAMPLING_PERIODS;
 static unsigned int index_max_value  = (DEFAULT_SAMPLING_PERIODS - 1);
-static unsigned int min_online_cpus = 1;
+static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus;
 
 struct delayed_work hotplug_decision_work;
@@ -575,7 +575,7 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 		history[i] = 500;
 	}
 
-	schedule_delayed_work_on(0, &hotplug_decision_work, HZ/2);
+	schedule_work(&hotplug_online_all_work);
 }
 
 static struct early_suspend auto_hotplug_suspend = {
