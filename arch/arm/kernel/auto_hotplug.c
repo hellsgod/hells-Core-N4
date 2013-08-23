@@ -63,8 +63,8 @@
  * DEFAULT_DISABLE_LOAD_THRESHOLD is the default load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE)
-#define DEFAULT_ENABLE_LOAD_THRESHOLD		200
+#define DEFAULT_ENABLE_ALL_LOAD_THRESHOLD	(125 * CPUS_AVAILABLE)
+#define DEFAULT_ENABLE_LOAD_THRESHOLD		300
 #define DEFAULT_DISABLE_LOAD_THRESHOLD		80
 
 #define SUSPEND_FREQ  702000
@@ -134,7 +134,7 @@ static int set_enable_load_threshold(const char *val, const struct kernel_param 
 		return -EINVAL;
 
 	ret = strict_strtol(val, 0, &num);
-	if (ret == -EINVAL || num > 250 || num < 130)
+	if (ret == -EINVAL || num > 300 || num < 130)
 		return -EINVAL;
 
 	ret = param_set_int(val, kp);
@@ -281,7 +281,7 @@ module_param_cb(enable_all_load_threshold, &module_ops_enable_all_load_threshold
 MODULE_PARM_DESC(enable_all_load_threshold, "auto_hotplug load threshold to rapidly online all CPUs (270-550)");
 
 module_param_cb(enable_load_threshold, &module_ops_enable_load_threshold, &enable_load_threshold, 0775);
-MODULE_PARM_DESC(enable_load_threshold, "auto_hotplug load threshold to enable one CPU (130-250)");
+MODULE_PARM_DESC(enable_load_threshold, "auto_hotplug load threshold to enable one CPU (130-300)");
 
 module_param_cb(disable_load_threshold, &module_ops_disable_load_threshold, &disable_load_threshold, 0775);
 MODULE_PARM_DESC(disable_load_threshold, "auto_hotplug load threshold to disable one CPU (40-125)");
@@ -438,10 +438,8 @@ static void __cpuinit hotplug_online_all_work_fn(struct work_struct *work)
 				pr_info("auto_hotplug: CPU%d up.\n", cpu);
 		}
 	}
-	/*
-	 * Pause for 2 seconds before even considering offlining a CPU
-	 */
-	schedule_delayed_work(&hotplug_unpause_work, HZ * 2);
+	
+	schedule_delayed_work(&hotplug_unpause_work, HZ);
 	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 }
 
@@ -543,7 +541,7 @@ void hotplug_boostpulse(void)
 					pr_info("auto_hotplug: %s: Canceling hotplug_offline_work\n", __func__);
 				cancel_delayed_work(&hotplug_offline_work);
 				flags |= HOTPLUG_PAUSED;
-				schedule_delayed_work(&hotplug_unpause_work, HZ * 2);
+				schedule_delayed_work(&hotplug_unpause_work, HZ);
 				schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 			}
 		}
