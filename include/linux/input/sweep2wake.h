@@ -29,8 +29,8 @@
 #define S2W_I2C_DELAY		20
 #define S2W_I2C_MAX_COUNT	20
 
-extern int s2w_switch;
 extern unsigned int retry_cnt;
+extern bool s2w_switch;
 extern bool scr_suspended;
 extern bool scr_on_touch;
 extern bool exec_count;

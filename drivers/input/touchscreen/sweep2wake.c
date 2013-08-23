@@ -28,7 +28,6 @@
 #include <linux/input/sweep2wake.h>
 
 /* Tuneables */
-#define DEBUG                   0
 #define S2W_Y_LIMIT             2350
 #define S2W_X_MAX               1540
 #define S2W_X_B1                500
@@ -40,91 +39,71 @@
 extern bool is_single_touch(struct lge_touch_data *ts);
 
 /* Resources */
-int s2w_switch = 1;
 unsigned int retry_cnt = 0;
+bool s2w_switch = true;
 bool scr_suspended = false, exec_count = true;
-bool scr_on_touch = false, barrier[2] = {false, false};
-static struct input_dev * sweep2wake_pwrdev;
+bool scr_on_touch = false, barrier[2] = { false, false };
+
+static struct input_dev *sweep2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 
-#ifdef CONFIG_CMDLINE_OPTIONS
-/* Read cmdline for s2w */
-static int __init read_s2w_cmdline(char *s2w)
-{
-	if (strcmp(s2w, "1") == 0) {
-		printk(KERN_INFO "[cmdline_s2w]: Sweep2Wake enabled. | s2w='%s'", s2w);
-		s2w_switch = 1;
-	} else if (strcmp(s2w, "0") == 0) {
-		printk(KERN_INFO "[cmdline_s2w]: Sweep2Wake disabled. | s2w='%s'", s2w);
-		s2w_switch = 0;
-	} else {
-		printk(KERN_INFO "[cmdline_s2w]: No valid input found. Sweep2Wake disabled. | s2w='%s'", s2w);
-		s2w_switch = 0;
-	}
-	return 1;
-}
-__setup("s2w=", read_s2w_cmdline);
-#endif
-
 /* PowerKey setter */
-void sweep2wake_setdev(struct input_dev * input_device) {
+void sweep2wake_setdev(struct input_dev *input_device)
+{
 	sweep2wake_pwrdev = input_device;
 	return;
 }
+
 EXPORT_SYMBOL(sweep2wake_setdev);
 
 /* PowerKey work func */
-static void sweep2wake_presspwr(struct work_struct * sweep2wake_presspwr_work) {
+static void sweep2wake_presspwr(struct work_struct *sweep2wake_presspwr_work)
+{
 	if (!mutex_trylock(&pwrkeyworklock))
-                return;
+		return;
 	input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 1);
 	input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);
 	msleep(S2W_PWRKEY_DUR);
 	input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 0);
 	input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);
 	msleep(S2W_PWRKEY_DUR);
-        mutex_unlock(&pwrkeyworklock);
+	mutex_unlock(&pwrkeyworklock);
 	return;
 }
+
 static DECLARE_WORK(sweep2wake_presspwr_work, sweep2wake_presspwr);
 
 /* PowerKey trigger */
-void sweep2wake_pwrtrigger(void) {
+void sweep2wake_pwrtrigger(void)
+{
 	schedule_work(&sweep2wake_presspwr_work);
-        return;
+	return;
 }
 
 /* Sweep2wake main function */
 void detect_sweep2wake(int x, int y, struct lge_touch_data *ts)
 {
-        int prevx = 0, nextx = 0;
-        bool single_touch = is_single_touch(ts);
-#if DEBUG
-        pr_info("[sweep2wake]: x,y(%4d,%4d) single:%s\n",
-                x, y, (single_touch) ? "true" : "false");
-#endif
-	//left->right
-	if ((single_touch) && (scr_suspended == true) && (s2w_switch > 0)) {
+	int prevx = 0, nextx = 0;
+
+	if (!is_single_touch(ts) || !s2w_switch)
+		return;
+
+	/* left->right */
+	if (scr_suspended) {
 		prevx = 0;
 		nextx = S2W_X_B1;
-		if ((barrier[0] == true) ||
-		   ((x > prevx) &&
-		    (x < nextx) &&
-		    (y > 0))) {
+		if (barrier[0] || (x > prevx && x < nextx && y > 0)) {
 			prevx = nextx;
 			nextx = S2W_X_B2;
 			barrier[0] = true;
-			if ((barrier[1] == true) ||
-			   ((x > prevx) &&
-			    (x < nextx) &&
-			    (y > 0))) {
+			if (barrier[1] || (x > prevx && x < nextx && y > 0)) {
 				prevx = nextx;
 				barrier[1] = true;
-				if ((x > prevx) &&
-				    (y > 0)) {
-					if (x > (S2W_X_MAX - S2W_X_FINAL)) {
+				if (x > prevx && y > 0) {
+					if (x > S2W_X_MAX - S2W_X_FINAL) {
 						if (exec_count) {
-							printk(KERN_INFO "[sweep2wake]: ON");
+							pr_info
+							    ("[sweep2wake]: ON\n");
 							sweep2wake_pwrtrigger();
 							exec_count = false;
 						}
@@ -132,29 +111,24 @@ void detect_sweep2wake(int x, int y, struct lge_touch_data *ts)
 				}
 			}
 		}
-	//right->left
-	} else if ((single_touch) && (scr_suspended == false) && (s2w_switch > 0)) {
-		scr_on_touch=true;
-		prevx = (S2W_X_MAX - S2W_X_FINAL);
+	/* right->left */
+	} else if (!scr_suspended) {
+		scr_on_touch = true;
+		prevx = S2W_X_MAX - S2W_X_FINAL;
 		nextx = S2W_X_B2;
-		if ((barrier[0] == true) ||
-		   ((x < prevx) &&
-		    (x > nextx) &&
-		    (y > S2W_Y_LIMIT))) {
+		if (barrier[0] || (x < prevx && x > nextx && y > S2W_Y_LIMIT)) {
 			prevx = nextx;
 			nextx = S2W_X_B1;
 			barrier[0] = true;
-			if ((barrier[1] == true) ||
-			   ((x < prevx) &&
-			    (x > nextx) &&
-			    (y > S2W_Y_LIMIT))) {
+			if (barrier[1] ||
+			    (x < prevx && x > nextx && y > S2W_Y_LIMIT)) {
 				prevx = nextx;
 				barrier[1] = true;
-				if ((x < prevx) &&
-				    (y > S2W_Y_LIMIT)) {
+				if (x < prevx && y > S2W_Y_LIMIT) {
 					if (x < S2W_X_FINAL) {
 						if (exec_count) {
-							printk(KERN_INFO "[sweep2wake]: OFF");
+							pr_info
+							    ("[sweep2wake]: OFF\n");
 							sweep2wake_pwrtrigger();
 							exec_count = false;
 						}
@@ -185,4 +159,3 @@ module_exit(sweep2wake_exit);
 
 MODULE_DESCRIPTION("Sweep2wake");
 MODULE_LICENSE("GPLv2");
-
