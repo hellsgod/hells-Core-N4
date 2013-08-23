@@ -40,8 +40,7 @@
 extern bool is_single_touch(struct lge_touch_data *ts);
 
 /* Resources */
-int s2w_switch = 0;
-unsigned int retry_cnt = 0;
+int s2w_switch = 1;
 bool scr_suspended = false, exec_count = true;
 bool scr_on_touch = false, barrier[2] = {false, false};
 static struct input_dev * sweep2wake_pwrdev;
