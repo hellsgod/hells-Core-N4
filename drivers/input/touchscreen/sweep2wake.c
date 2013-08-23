@@ -40,7 +40,7 @@ extern bool is_single_touch(struct lge_touch_data *ts);
 
 /* Resources */
 unsigned int retry_cnt = 0;
-bool s2w_switch = true;
+bool s2w_switch = false;
 bool scr_suspended = false, exec_count = true;
 bool scr_on_touch = false, barrier[2] = { false, false };
 
