@@ -952,6 +952,12 @@ config TOUCHSCREEN_LGE_COMMON
 	help
 	  Enable LGE Touch Common Driver which runs with lower driver.
 
+config DOUBLETAP_WAKE
+	bool "Double Tab to Wake"
+	depends on TOUCHSCREEN_LGE_COMMON
+	help
+	  Enable Double Tab to Wake functionality.
+
 config TOUCHSCREEN_LGE_SYNAPTICS
 	bool "Synaptics RMI4 driver for LG Touch Common Driver"
 	depends on I2C
