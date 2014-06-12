@@ -378,9 +378,11 @@ static void cpu_down_work(struct work_struct *work)
 		if (cpu == 0)
 			continue;
 		lowest_cpu = get_lowest_load_cpu();
-		if (check_down_lock(cpu))
-			break;
-		cpu_down(lowest_cpu);
+		if (lowest_cpu > 0 && lowest_cpu <= stats.total_cpus) {
+			if (check_down_lock(lowest_cpu))
+				break;
+			cpu_down(lowest_cpu);
+		}
 		if (target >= num_online_cpus())
 			break;
 	}
@@ -452,11 +454,9 @@ static unsigned int load_to_update_rate(unsigned int load)
 
 static void reschedule_hotplug_work(void)
 {
-	unsigned int delay;
-
-	delay = load_to_update_rate(stats.cur_avg_load);
+	int delay = load_to_update_rate(stats.cur_avg_load);
 	queue_delayed_work_on(0, hotplug_wq, &hotplug_work,
-				msecs_to_jiffies(delay));
+			      msecs_to_jiffies(delay));
 }
 
 static void msm_hotplug_work(struct work_struct *work)
