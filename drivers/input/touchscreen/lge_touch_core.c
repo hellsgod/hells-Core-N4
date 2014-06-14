@@ -153,13 +153,9 @@ void* get_touch_handle(struct i2c_client *client)
  */
 int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 {
-<<<<<<< HEAD
 
 #define SYNAPTICS_I2C_RETRY 10
 	int retry = 0;
-=======
-	int i = 0;
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 
 	struct i2c_msg msgs[] = {
 		{
@@ -176,7 +172,6 @@ int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 		},
 	};
 
-<<<<<<< HEAD
 	for (retry = 0; retry <= SYNAPTICS_I2C_RETRY; retry++) {
 		if (i2c_transfer(client->adapter, msgs, 2) == 2)
 			break;
@@ -189,19 +184,6 @@ int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 			msleep(10);
 	}
 	return 0;
-=======
-	do {
-		if (i2c_transfer(client->adapter, msgs, 2) == 2)
-			return 0;
-		TOUCH_INFO_MSG("i2c retry\n");
-		/* It should be booting delay, but 20ms works OK */
-		msleep(20);
-	} while (++i < 10);
-	
-	if (printk_ratelimit())
-		TOUCH_ERR_MSG("transfer error\n");
-	return -EIO;
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 }
 
 int touch_i2c_write(struct i2c_client *client, u8 reg, int len, u8 * buf)
@@ -811,55 +793,6 @@ static void dump_pointer_trace(void)
 }
 #endif
 
-#ifdef CONFIG_DOUBLETAP_WAKE
-
-/* Checks if there is a touch in the center of the screen */
-static inline int touch_within_limits(struct lge_touch_data *ts, int id)
-{
-	return (ts->ts_data.curr_data[id].x_position > 768 - DTW_TOUCH_AREA &&
-		ts->ts_data.curr_data[id].x_position < 768 + DTW_TOUCH_AREA &&
-		ts->ts_data.curr_data[id].y_position > 1280 - DTW_TOUCH_AREA &&
-		ts->ts_data.curr_data[id].y_position < 1280 + DTW_TOUCH_AREA);
-}
-
-static inline void touch_check_dt_wake(struct lge_touch_data *ts, int id)
-{
-	unsigned long diff_time;
-
-	diff_time = jiffies_to_msecs(jiffies - ts->dt_wake.time);
-	if (touch_within_limits(ts, id) && diff_time < ts->dt_wake.max_interval) {
-		TOUCH_DEBUG_MSG("diff_time: %lu, hits: %u, x: %u, y: %u, touch_id: %u\n",
-			diff_time,
-			ts->dt_wake.hits, ts->ts_data.curr_data[id].x_position,
-			ts->ts_data.curr_data[id].y_position, id);
-
-		if (ts->ts_data.curr_data[id].state != ABS_RELEASE)
-			ts->dt_wake.touch_id = id;
-		else {
-			if (ts->dt_wake.touch_id == id)
-				ts->dt_wake.hits++;
-
-			ts->ts_data.curr_data[id].state = 0;
-		}
-	} else if (diff_time > ts->dt_wake.max_interval)
-		ts->dt_wake.hits = 0;
-
-	ts->dt_wake.time = jiffies;
-	if (ts->dt_wake.hits == 2) {
-		ts->dt_wake.hits = 0;
-		TOUCH_INFO_MSG("double tap detected try to resume\n");
-
-		mutex_lock(&ts->dt_wake.lock);
-		input_report_key(ts->input_dev, KEY_POWER, 1);
-		input_sync(ts->input_dev);
-		msleep(ts->pdata->role->booting_delay);
-		input_report_key(ts->input_dev, KEY_POWER, 0);
-		input_sync(ts->input_dev);
-		mutex_unlock(&ts->dt_wake.lock);
-	}
-}
-#endif
-
 static void touch_input_report(struct lge_touch_data *ts)
 {
 	int	id;
@@ -867,12 +800,7 @@ static void touch_input_report(struct lge_touch_data *ts)
 	for (id = 0; id < ts->pdata->caps->max_id; id++) {
 		if (!ts->ts_data.curr_data[id].state)
 			continue;
-#ifdef CONFIG_DOUBLETAP_WAKE
-		if (ts->dt_wake.enabled && ts->curr_resume_state == 0) {
-			touch_check_dt_wake(ts, id);
-			continue;
-		}
-#endif
+
 		input_mt_slot(ts->input_dev, id);
 		input_mt_report_slot_state(ts->input_dev,
 				ts->ts_data.curr_data[id].tool_type,
@@ -883,7 +811,6 @@ static void touch_input_report(struct lge_touch_data *ts)
 					ts->ts_data.curr_data[id].x_position);
 			input_report_abs(ts->input_dev, ABS_MT_POSITION_Y,
 					ts->ts_data.curr_data[id].y_position);
-
 			if (is_pressure)
 				input_report_abs(ts->input_dev, ABS_MT_PRESSURE,
 					ts->ts_data.curr_data[id].pressure);
@@ -1637,28 +1564,6 @@ static ssize_t ic_register_ctrl(struct lge_touch_data *ts,
 	return count;
 }
 
-<<<<<<< HEAD
-=======
-/* show_jitter_solution
- *
- * show jitter parameters
- */
-
-static ssize_t show_jitter_solution(struct lge_touch_data *ts, char *buf)
-{
-	int ret = 0;
-
-	ret = sprintf(buf, "%d %d\n",
-				ts->pdata->role->jitter_filter_enable,
-				ts->jitter_filter.adjust_margin);
-	return ret;
-}
-
- /* store_jitter_solution
- *
- * store jitter parameters
- */
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 static ssize_t store_jitter_solution(struct lge_touch_data *ts,
 						const char *buf, size_t count)
 {
@@ -1753,29 +1658,15 @@ static ssize_t show_charger(struct lge_touch_data *ts, char *buf)
 	return sprintf(buf, "%d\n", ts->charger_type);
 }
 
-<<<<<<< HEAD
 static ssize_t show_boosted_time(struct lge_touch_data *ts, char *buf)
 {
 	int ret = 0;
 
 	ret = sprintf(buf, "%d\n", boosted_time);
-=======
-#ifdef CONFIG_DOUBLETAP_WAKE
-/* show_dt_wake_enabled
- *
- * Show if doubletap to wake functionality is enabled/disabled.
- */
-static ssize_t show_dt_wake_enabled(struct lge_touch_data *ts, char *buf)
-{
-	int ret = 0;
-
-	ret = sprintf(buf, "%u\n", ts->dt_wake.enabled);
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 
 	return ret;
 }
 
-<<<<<<< HEAD
 static ssize_t store_boosted_time(struct lge_touch_data *ts, const char *buf,
 			     size_t count)
 {
@@ -1787,31 +1678,6 @@ static ssize_t store_boosted_time(struct lge_touch_data *ts, const char *buf,
 
 	return count;
 }
-=======
-/* store_dt_wake_enabled
- *
- * Enabled/Disable doubletap to wake functionality.
- */
-static ssize_t store_dt_wake_enabled(struct lge_touch_data *ts, const char *buf,
-								size_t count)
-{
-	unsigned int value;
-	int ret;
-
-	ret = sscanf(buf, "%u", &value);
-	if (value < 0 || value > 1)
-		return -EINVAL;
-
-	if (ts->curr_resume_state == 0) {
-		ts->dt_wake.pending_status = value;
-		ts->dt_wake.pending = 1;
-	} else
-		ts->dt_wake.enabled = value;
-
-	return count;
-}
-#endif
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 
 static LGE_TOUCH_ATTR(platform_data, S_IRUGO | S_IWUSR, show_platform_data, NULL);
 static LGE_TOUCH_ATTR(firmware, S_IRUGO | S_IWUSR, show_fw_info, store_fw_upgrade);
@@ -1824,14 +1690,7 @@ static LGE_TOUCH_ATTR(show_touches, S_IRUGO | S_IWUSR, show_show_touches, store_
 static LGE_TOUCH_ATTR(pointer_location, S_IRUGO | S_IWUSR, show_pointer_location,
 					store_pointer_location);
 static LGE_TOUCH_ATTR(charger, S_IRUGO | S_IWUSR, show_charger, NULL);
-<<<<<<< HEAD
 static LGE_TOUCH_ATTR(boost_time, S_IRUGO | S_IWUSR, show_boosted_time, store_boosted_time);
-=======
-#ifdef CONFIG_DOUBLETAP_WAKE
-static LGE_TOUCH_ATTR(dt_wake_enabled, S_IRUGO | S_IWUSR, show_dt_wake_enabled,
-					store_dt_wake_enabled);
-#endif
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 
 static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_platform_data.attr,
@@ -1844,13 +1703,7 @@ static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_show_touches.attr,
 	&lge_touch_attr_pointer_location.attr,
 	&lge_touch_attr_charger.attr,
-<<<<<<< HEAD
 	&lge_touch_attr_boost_time.attr,
-=======
-#ifdef CONFIG_DOUBLETAP_WAKE
-	&lge_touch_attr_dt_wake_enabled.attr,
-#endif
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 	NULL,
 };
 
@@ -1895,7 +1748,7 @@ static const struct sysfs_ops lge_touch_sysfs_ops = {
 
 static struct kobj_type lge_touch_kobj_type = {
 	.sysfs_ops	= &lge_touch_sysfs_ops,
-	.default_attrs	= lge_touch_attribute_list,
+	.default_attrs 	= lge_touch_attribute_list,
 };
 
 static struct sysdev_class lge_touch_sys_class = {
@@ -2191,23 +2044,6 @@ static int touch_probe(struct i2c_client *client,
 	register_early_suspend(&ts->early_suspend);
 #endif
 
-<<<<<<< HEAD
-=======
-#ifdef CONFIG_TOUCH_WAKE
-	touchwake_data = ts;
-#endif
-#ifdef CONFIG_DOUBLETAP_WAKE
-	mutex_init(&ts->dt_wake.lock);
-	ts->dt_wake.enabled = 0;
-	ts->dt_wake.pending_status = 0;
-	ts->dt_wake.hits = 0;
-	ts->dt_wake.time = 0;
-	ts->dt_wake.touch_id = -1;
-	ts->dt_wake.max_interval = DTW_MAX_INTERVAL;
-
-	input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
-#endif
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 	/* Register sysfs for making fixed communication path to framework layer */
 	ret = sysdev_class_register(&lge_touch_sys_class);
 	if (ret < 0) {
@@ -2306,53 +2142,8 @@ static int touch_remove(struct i2c_client *client)
 	return 0;
 }
 
-<<<<<<< HEAD
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 static void touch_early_suspend(struct early_suspend *h)
-=======
-static void touch_power_on(struct lge_touch_data *ts)
-{
-	if (unlikely(touch_debug_mask & DEBUG_TRACE))
-		TOUCH_DEBUG_MSG("\n");
-
-	ts->curr_resume_state = 1;
-
-	if (ts->fw_upgrade.is_downloading == UNDER_DOWNLOADING) {
-		TOUCH_INFO_MSG("late_resume is not executed\n");
-		return;
-	}
-
-#ifdef CONFIG_DOUBLETAP_WAKE
-	if (ts->dt_wake.enabled)
-		disable_irq_wake(ts->client->irq);
-	else {
-#endif
-		touch_power_cntl(ts, ts->pdata->role->resume_pwr);
-
-		if (ts->pdata->role->operation_mode == INTERRUPT_MODE)
-			enable_irq(ts->client->irq);
-		else
-			hrtimer_start(&ts->timer,
-				ktime_set(0, ts->pdata->role->report_period),
-						HRTIMER_MODE_REL);
-
-		if (ts->pdata->role->resume_pwr == POWER_ON)
-			queue_delayed_work(touch_wq, &ts->work_init,
-				msecs_to_jiffies(ts->pdata->role->booting_delay));
-		else
-			queue_delayed_work(touch_wq, &ts->work_init, 0);
-#ifdef CONFIG_DOUBLETAP_WAKE
-	}
-
-	if (ts->dt_wake.pending) {
-		ts->dt_wake.enabled = ts->dt_wake.pending_status;
-		ts->dt_wake.pending = 0;
-	}
-#endif
-}
-
-static void touch_power_off(struct lge_touch_data *ts)
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 {
 	struct lge_touch_data *ts =
 			container_of(h, struct lge_touch_data, early_suspend);
@@ -2380,18 +2171,7 @@ static void touch_power_off(struct lge_touch_data *ts)
 		TOUCH_INFO_MSG("early_suspend is not executed\n");
 		return;
 	}
-#ifdef CONFIG_DOUBLETAP_WAKE
-	if (ts->dt_wake.enabled) {
-		release_all_ts_event(ts);
-		enable_irq_wake(ts->client->irq);
-	} else {
-#endif
-		if (ts->pdata->role->operation_mode == INTERRUPT_MODE)
-			disable_irq(ts->client->irq);
-		else
-			hrtimer_cancel(&ts->timer);
 
-<<<<<<< HEAD
 #ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
         if (!prevent_sleep) {
 #endif
@@ -2404,20 +2184,6 @@ static void touch_power_off(struct lge_touch_data *ts)
 	        cancel_delayed_work_sync(&ts->work_init);
 	        if (ts->pdata->role->key_type == TOUCH_HARD_KEY)
 		        cancel_delayed_work_sync(&ts->work_touch_lock);
-=======
-		cancel_work_sync(&ts->work);
-		cancel_delayed_work_sync(&ts->work_init);
-		if (ts->pdata->role->key_type == TOUCH_HARD_KEY)
-			cancel_delayed_work_sync(&ts->work_touch_lock);
-
-		release_all_ts_event(ts);
-
-		touch_power_cntl(ts, ts->pdata->role->suspend_pwr);
-#ifdef CONFIG_DOUBLETAP_WAKE
-	}
-#endif
-}
->>>>>>> c97f4a52... input: lge_touch_core: Implement Double tap to wake functionality
 
 	        release_all_ts_event(ts);
 
