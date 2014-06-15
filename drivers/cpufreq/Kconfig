@@ -116,20 +116,17 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-<<<<<<< HEAD
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX
+        bool "smartmax"
+        select CPU_FREQ_GOV_SMARTMAX
+        help
+
 config CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND
 	bool "intellidemand"
 	select CPU_FREQ_GOV_INTELLIDEMAND
 	help
 	  Use the CPUFreq governor 'intellidemand' as default. This is
 	  based on Ondemand with browsing detection based on GPU loading
-=======
-config CPU_FREQ_DEFAULT_GOV_SMARTMAX
-        bool "smartmax"
-        select CPU_FREQ_GOV_SMARTMAX
-        help
-          Use the CPUFreq governor 'smartmax' as default
->>>>>>> 494c74e... cpufreq: smartmax: added new governor based on ondemand and smartass2
 
 endchoice
 
@@ -232,7 +229,12 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 	  If in doubt, say N.
 
-<<<<<<< HEAD
+config CPU_FREQ_GOV_SMARTMAX
+        tristate "'smartmax' cpufreq policy governor"
+        select CPU_FREQ_TABLE
+        help
+          'smartmax' combined ondemand and smartass2
+
 config CPU_FREQ_GOV_INTELLIDEMAND
         tristate "'intellidemand' cpufreq policy governor"
         select CPU_FREQ_TABLE
@@ -277,13 +279,8 @@ config CPUFREQ_ID_PERFLOCK
 	default n
 	help
 		Minimum CPU performance lock for Intellidemand governor
-=======
-config CPU_FREQ_GOV_SMARTMAX
-        tristate "'smartmax' cpufreq policy governor"
-        select CPU_FREQ_TABLE
-        help
-          'smartmax' combined ondemand and smartass2
->>>>>>> 494c74e... cpufreq: smartmax: added new governor based on ondemand and smartass2
+
+
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
