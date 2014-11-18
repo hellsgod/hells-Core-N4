@@ -387,6 +387,9 @@ extern struct cpufreq_governor cpufreq_gov_hellsactive;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTMAX)
 extern struct cpufreq_governor cpufreq_gov_smartmax;
 #define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_smartmax)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROMAX)
+extern struct cpufreq_governor cpufreq_gov_promax;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_promax)
 #endif
 
 
@@ -427,6 +430,5 @@ void cpufreq_frequency_table_get_attr(struct cpufreq_frequency_table *table,
 				      unsigned int cpu);
 
 void cpufreq_frequency_table_put_attr(unsigned int cpu);
-
 
 #endif /* _LINUX_CPUFREQ_H */
