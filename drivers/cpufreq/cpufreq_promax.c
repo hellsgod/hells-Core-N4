@@ -194,7 +194,7 @@ static unsigned int sampling_rate;
 static unsigned int input_boost_duration;
 
 static unsigned int touch_poke_freq;
-static bool touch_poke = false;
+static bool touch_poke = true;
 
 /*
  * should ramp_up steps during boost be possible

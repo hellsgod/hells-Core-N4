@@ -126,7 +126,7 @@ static u64 round_to_nw_start(u64 jif)
 	return (jif + 1) * step;
 }
 
-static int two_phase_freq_array[NR_CPUS] = {[0 ... NR_CPUS-1] = 1728000} ;
+static int two_phase_freq_array[NR_CPUS] = {[0 ... NR_CPUS-1] = 1350000} ;
 
 static void cpufreq_interactive_timer_resched(unsigned long cpu)
 {
