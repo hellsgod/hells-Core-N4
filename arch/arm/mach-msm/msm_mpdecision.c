@@ -443,16 +443,16 @@ static void mpdec_input_callback(struct work_struct *unused) {
 	return;
 }
 
-#ifdef CONFIG_BRICKED_THERMAL
-extern int bricked_thermal_throttled;
+#ifdef CONFIG_MSM_THERMAL
+extern int msm_thermal_throttled;
 #endif
 
 static void mpdec_input_event(struct input_handle *handle, unsigned int type,
 				unsigned int code, int value) {
 	int i = 0;
 
-#ifdef CONFIG_BRICKED_THERMAL
-	if (bricked_thermal_throttled > 0)
+#ifdef CONFIG_MSM_THERMAL
+	if (msm_thermal_throttled > 0)
 		return;
 #endif
 
