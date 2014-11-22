@@ -137,12 +137,12 @@ extern int tegra_input_boost (struct cpufreq_policy *policy,
 #define DEFAULT_AWAKE_IDEAL_FREQ 486000
 #define DEFAULT_RAMP_UP_STEP 400000
 #define DEFAULT_RAMP_DOWN_STEP 600000
-#define DEFAULT_MAX_CPU_LOAD 60
+#define DEFAULT_MAX_CPU_LOAD 50
 #define DEFAULT_MIN_CPU_LOAD 20
 #define DEFAULT_UP_RATE 40000
 #define DEFAULT_DOWN_RATE 60000
-#define DEFAULT_SAMPLING_RATE 30000
-#define DEFAULT_INPUT_BOOST_DURATION 270000
+#define DEFAULT_SAMPLING_RATE 50000
+#define DEFAULT_INPUT_BOOST_DURATION 470000
 #define DEFAULT_TOUCH_POKE_FREQ 918000
 #define DEFAULT_BOOST_FREQ 1350000
 #define DEFAULT_IO_IS_BUSY 1
@@ -194,7 +194,7 @@ static unsigned int sampling_rate;
 static unsigned int input_boost_duration;
 
 static unsigned int touch_poke_freq;
-static bool touch_poke = true;
+static bool touch_poke = false;
 
 /*
  * should ramp_up steps during boost be possible

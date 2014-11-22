@@ -3530,6 +3530,9 @@ static struct clk_freq_tbl clk_tbl_gfx3d[] = {
 	F_GFX3D(320000000, pll2,  2,  5),
 	F_GFX3D(400000000, pll2,  1,  2),
 	F_GFX3D(450000000, pll15, 1,  2),
+#ifdef CONFIG_GPU_OVERCLOCK
+	F_GFX3D(487500000, pll15, 1,  2),
+#endif
 	F_END
 };
 
@@ -3585,7 +3588,15 @@ static unsigned long fmax_gfx3d_8064ab[VDD_DIG_NUM] = {
 static unsigned long fmax_gfx3d_8064[VDD_DIG_NUM] = {
 	[VDD_DIG_LOW]     = 128000000,
 	[VDD_DIG_NOMINAL] = 325000000,
+#ifdef CONFIG_GPU_OVERCLOCK
+#ifdef CONFIG_GPU_OVERCLOCK_450
+	[VDD_DIG_HIGH]    = 450000000
+#else
+	[VDD_DIG_HIGH]    = 487500000
+#endif
+#else
 	[VDD_DIG_HIGH]    = 400000000
+#endif
 };
 
 static unsigned long fmax_gfx3d_8930[VDD_DIG_NUM] = {
@@ -6560,11 +6571,18 @@ static void __init reg_init(void)
 		if (!readl_relaxed(PRNG_CLK_NS_REG))
 			writel_relaxed(0x2B, PRNG_CLK_NS_REG);
 	}
-
+#ifdef CONFIG_GPU_OVERCLOCK_450
+	if (cpu_is_apq8064aa()) {
+#else
 	if (cpu_is_apq8064() || cpu_is_apq8064aa()) {
+#endif
 		/* Program PLL15 to 975MHz with ref clk = 27MHz */
 		configure_sr_pll(&pll15_config, &pll15_regs, 0);
+#ifdef CONFIG_GPU_OVERCLOCK_450
+	} else if (cpu_is_apq8064() || cpu_is_apq8064ab()) {
+#else
 	} else if (cpu_is_apq8064ab()) {
+#endif
 		/* Program PLL15 to 900MHZ */
 		pll15_config.l = 0x21 | BVAL(31, 7, 0x620);
 		pll15_config.m = 0x1;

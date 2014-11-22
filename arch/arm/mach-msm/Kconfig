@@ -1645,6 +1645,19 @@ config CPU_OVERCLOCK
 	help
 	  Krait Overclocking
 
+config GPU_OVERCLOCK
+	bool "Enable GPU Overclocking option"
+	default n
+	help
+	  APQ8064 GPU overclocking to 487.5
+
+config GPU_OVERCLOCK_450
+        bool "Enable special GPU Overclocking option"
+	depends on GPU_OVERCLOCK
+        default n
+        help
+          APQ8064 GPU overclocking to 450
+
 config USERSPACE_VOLTAGE_CONTROL
 	bool "Enable Userspace CPU Voltage Control"
 	default y
