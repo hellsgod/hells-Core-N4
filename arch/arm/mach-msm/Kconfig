@@ -1639,6 +1639,12 @@ config CPU_UNDERCLOCK
 	help
 	  Krait underclocking
 
+config CPU_OVERCLOCK
+	bool "Enable CPU Overclocking"
+	default n
+	help
+	  Krait Overclocking
+
 config USERSPACE_VOLTAGE_CONTROL
 	bool "Enable Userspace CPU Voltage Control"
 	default y
