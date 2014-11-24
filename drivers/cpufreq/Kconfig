@@ -118,26 +118,20 @@ config CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-config CPU_FREQ_DEFAULT_GOV_HELLSACTIVE
-	bool "hellsactive"
-	select CPU_FREQ_GOV_HELLSACTIVE
+config CPU_FREQ_DEFAULT_GOV_PROACTIVE
+	bool "proactive"
+	select CPU_FREQ_GOV_PROACTIVE
 	help
-	  Use the CPUFreq governor 'hellsactive' as default. This allows
+	  Use the CPUFreq governor 'proactive' as default. This allows
 	  you to get a full dynamic cpu frequency capable system by simply
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-config CPU_FREQ_DEFAULT_GOV_SMARTMAX
-        bool "smartmax"
-        select CPU_FREQ_GOV_SMARTMAX
+config CPU_FREQ_DEFAULT_GOV_PROSMART
+        bool "prosmart"
+        select CPU_FREQ_GOV_PROSMART
         help
-          Use the CPUFreq governor 'smartmax' as default
-
-config CPU_FREQ_DEFAULT_GOV_PROMAX
-        bool "promax"
-        select CPU_FREQ_GOV_PROMAX
-        help
-          Use the CPUFreq governor 'promax' as default
+          Use the CPUFreq governor 'prosmart' as default
 
 endchoice
 
@@ -254,10 +248,10 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 
 	  If in doubt, say N.
 
-config CPU_FREQ_GOV_HELLSACTIVE
-	tristate "'hellsactive' cpufreq policy governor"
+config CPU_FREQ_GOV_PROACTIVE
+	tristate "'proactive' cpufreq policy governor"
 	help
-	  'hellsactive' - This driver adds a dynamic cpufreq policy governor
+	  'proactive' - This driver adds a dynamic cpufreq policy governor
 	  designed for latency-sensitive workloads.
 
 	  This governor attempts to reduce the latency of clock
@@ -269,13 +263,11 @@ config CPU_FREQ_GOV_HELLSACTIVE
 
 	  For details, take a look at linux/Documentation/cpu-freq.
 
-	  If in doubt, say N.
-
-config CPU_FREQ_GOV_PROMAX
-        tristate "'promax' cpufreq policy governor"
+config CPU_FREQ_GOV_PROSMART
+        tristate "'prosmart' cpufreq policy governor"
         select CPU_FREQ_TABLE
         help
-          'promax' combined ondemand and smartass2
+          'prosmart' combined ondemand and smartass2
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86

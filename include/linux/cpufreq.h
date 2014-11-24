@@ -381,17 +381,13 @@ extern struct cpufreq_governor cpufreq_gov_interactive;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE)
 extern struct cpufreq_governor cpufreq_gov_intelliactive;
 #define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_intelliactive)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_HELLSACTIVE)
-extern struct cpufreq_governor cpufreq_gov_hellsactive;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_hellsactive)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTMAX)
-extern struct cpufreq_governor cpufreq_gov_smartmax;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_smartmax)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROMAX)
-extern struct cpufreq_governor cpufreq_gov_promax;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_promax)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROACTIVE)
+extern struct cpufreq_governor cpufreq_gov_proactive;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_proactive)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROSMART)
+extern struct cpufreq_governor cpufreq_gov_prosmart;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_prosmart)
 #endif
-
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *
