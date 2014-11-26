@@ -375,19 +375,20 @@ extern struct cpufreq_governor cpufreq_gov_ondemand;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE)
 extern struct cpufreq_governor cpufreq_gov_conservative;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_conservative)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE)
-extern struct cpufreq_governor cpufreq_gov_interactive;
-#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactive)
-#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE)
-extern struct cpufreq_governor cpufreq_gov_intelliactive;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_intelliactive)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROACTIVE)
 extern struct cpufreq_governor cpufreq_gov_proactive;
-#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_proactive)
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_proactive)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROMARE)
+extern struct cpufreq_governor cpufreq_gov_promare;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_promare)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTMAX)
+extern struct cpufreq_governor cpufreq_gov_smartmax;
+#define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_smartmax)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_PROSMART)
 extern struct cpufreq_governor cpufreq_gov_prosmart;
 #define CPUFREQ_DEFAULT_GOVERNOR        (&cpufreq_gov_prosmart)
 #endif
+
 
 /*********************************************************************
  *                     FREQUENCY TABLE HELPERS                       *

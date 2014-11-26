@@ -1633,18 +1633,6 @@ config MSM_CPU_FREQ_MIN
 
 endif # CPU_FREQ_MSM
 
-config CPU_UNDERCLOCK
-	bool "Enable CPU Underclocking"
-	default n
-	help
-	  Krait underclocking
-
-config CPU_OVERCLOCK
-	bool "Enable CPU Overclocking"
-	default n
-	help
-	  Krait Overclocking
-
 config GPU_OVERCLOCK
 	bool "Enable GPU Overclocking option"
 	default n
@@ -1657,6 +1645,18 @@ config GPU_OVERCLOCK_450
         default n
         help
           APQ8064 GPU overclocking to 450
+
+config CPU_OVERCLOCK
+	bool "Enable CPU Overclocking option"
+	default n
+	help
+	  Krait overclocking up to 1.84 GHz
+
+config CPU_UNDERCLOCK
+	bool "Enable CPU Underclocking"
+	default n
+	help
+	  Krait underclocking
 
 config USERSPACE_VOLTAGE_CONTROL
 	bool "Enable Userspace CPU Voltage Control"

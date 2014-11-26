@@ -100,23 +100,15 @@ config CPU_FREQ_DEFAULT_GOV_CONSERVATIVE
 	  governor. If unsure have a look at the help section of the
 	  driver. Fallback governor will be the performance governor.
 
-config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
-	bool "interactive"
-	select CPU_FREQ_GOV_INTERACTIVE
+config CPU_FREQ_DEFAULT_GOV_PROMARE
+	bool "promare"
+	select CPU_FREQ_GOV_PROMARE
 	help
-	  Use the CPUFreq governor 'interactive' as default. This allows
+	  Use the CPUFreq governor 'promare' as default. This allows
 	  you to get a full dynamic cpu frequency capable system by simply
 	  loading your cpufreq low-level hardware driver, using the
-	  'interactive' governor for latency-sensitive workloads.
+	  'promare' governor for latency-sensitive workloads.
 
-config CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE
-	bool "intelliactive"
-	select CPU_FREQ_GOV_INTELLIACTIVE
-	help
-	  Use the CPUFreq governor 'intelliactive' as default. This allows
-	  you to get a full dynamic cpu frequency capable system by simply
-	  loading your cpufreq low-level hardware driver, using the
-	  'interactive' governor for latency-sensitive workloads.
 
 config CPU_FREQ_DEFAULT_GOV_PROACTIVE
 	bool "proactive"
@@ -125,7 +117,13 @@ config CPU_FREQ_DEFAULT_GOV_PROACTIVE
 	  Use the CPUFreq governor 'proactive' as default. This allows
 	  you to get a full dynamic cpu frequency capable system by simply
 	  loading your cpufreq low-level hardware driver, using the
-	  'interactive' governor for latency-sensitive workloads.
+	  'promare' governor for latency-sensitive workloads.
+
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX
+        bool "smartmax"
+        select CPU_FREQ_GOV_SMARTMAX
+        help
+          Use the CPUFreq governor 'smartmax' as default
 
 config CPU_FREQ_DEFAULT_GOV_PROSMART
         bool "prosmart"
@@ -191,18 +189,18 @@ config CPU_FREQ_GOV_ONDEMAND
 
 	  If in doubt, say N.
 
-config CPU_FREQ_GOV_INTERACTIVE
-	tristate "'interactive' cpufreq policy governor"
+config CPU_FREQ_GOV_PROMARE
+	tristate "'promare' cpufreq policy governor"
 	help
-	  'interactive' - This driver adds a dynamic cpufreq policy governor
+	  'promare' - This driver adds a dynamic cpufreq policy governor
 	  designed for latency-sensitive workloads.
 
 	  This governor attempts to reduce the latency of clock
 	  increases so that the system is more responsive to
-	  interactive workloads.
+	  promare workloads.
 
 	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_interactive.
+	  module will be called cpufreq_promare.
 
 	  For details, take a look at linux/Documentation/cpu-freq.
 
@@ -231,22 +229,6 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 	  If in doubt, say N.
 
-config CPU_FREQ_GOV_INTELLIACTIVE
-	tristate "'intelliactive' cpufreq policy governor"
-	help
-	  'intelliactive' - This driver adds a dynamic cpufreq policy governor
-	  designed for latency-sensitive workloads.
-
-	  This governor attempts to reduce the latency of clock
-	  increases so that the system is more responsive to
-	  interactive workloads.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_interactive.
-
-	  For details, take a look at linux/Documentation/cpu-freq.
-
-	  If in doubt, say N.
 
 config CPU_FREQ_GOV_PROACTIVE
 	tristate "'proactive' cpufreq policy governor"
@@ -256,12 +238,14 @@ config CPU_FREQ_GOV_PROACTIVE
 
 	  This governor attempts to reduce the latency of clock
 	  increases so that the system is more responsive to
-	  interactive workloads.
+	  promare workloads.
 
 	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_interactive.
+	  module will be called cpufreq_promare.
 
 	  For details, take a look at linux/Documentation/cpu-freq.
+
+	  If in doubt, say N.
 
 config CPU_FREQ_GOV_PROSMART
         tristate "'prosmart' cpufreq policy governor"

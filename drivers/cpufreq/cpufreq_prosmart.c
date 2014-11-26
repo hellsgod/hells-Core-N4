@@ -2,13 +2,11 @@
  * drivers/cpufreq/cpufreq_prosmart.c
  *
  * Copyright (C) 2013 maxwen
- * Copyright (C) 2014 jamevu
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
  * Author: maxwen
- * Author: jamevu (jamevu@gmail.com) Minor Modifications for prosmart
  *
  * Based on the ondemand and smartassV2 governor
  *
@@ -16,7 +14,7 @@
  *  Copyright (C)  2001 Russell King
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
- *
+ * Author: jamevu (jamevu@gmail.com) Minor Modification for prosmart
  * smartassV2:
  * Author: Erasmux
  * For a general overview of CPU governors see the relavent part in
@@ -136,13 +134,13 @@ extern int tegra_input_boost (struct cpufreq_policy *policy,
 #define DEFAULT_AWAKE_IDEAL_FREQ 486000
 #define DEFAULT_RAMP_UP_STEP 400000
 #define DEFAULT_RAMP_DOWN_STEP 600000
-#define DEFAULT_MAX_CPU_LOAD 60
-#define DEFAULT_MIN_CPU_LOAD 20
+#define DEFAULT_MAX_CPU_LOAD 70
+#define DEFAULT_MIN_CPU_LOAD 30
 #define DEFAULT_UP_RATE 40000
 #define DEFAULT_DOWN_RATE 60000
-#define DEFAULT_SAMPLING_RATE 50000
-#define DEFAULT_INPUT_BOOST_DURATION 470000
-#define DEFAULT_TOUCH_POKE_FREQ 918000
+#define DEFAULT_SAMPLING_RATE 30000
+#define DEFAULT_INPUT_BOOST_DURATION 260000
+#define DEFAULT_TOUCH_POKE_FREQ 810000
 #define DEFAULT_BOOST_FREQ 1242000
 #define DEFAULT_IO_IS_BUSY 1
 #define DEFAULT_IGNORE_NICE 1
@@ -193,7 +191,7 @@ static unsigned int sampling_rate;
 static unsigned int input_boost_duration;
 
 static unsigned int touch_poke_freq;
-static bool touch_poke = false;
+static bool touch_poke = true;
 
 /*
  * should ramp_up steps during boost be possible

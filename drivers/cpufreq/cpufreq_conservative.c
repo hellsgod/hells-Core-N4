@@ -29,9 +29,9 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(80)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(20)
-#define DEF_FREQUENCY_STEP			(5)
+#define DEF_FREQUENCY_UP_THRESHOLD		(75)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(30)
+#define DEF_FREQUENCY_STEP			(10)
 
 /*
  * The polling frequency of this governor depends on the capability of
