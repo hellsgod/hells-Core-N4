@@ -88,12 +88,12 @@ static struct promare_tuners {
 	atomic_t freq_step_dec_at_max_freq;
 
 } promare_tuners_ins = {
-	.sampling_rate = ATOMIC_INIT(40000),
+	.sampling_rate = ATOMIC_INIT(50000),
 	.inc_cpu_load_at_min_freq = ATOMIC_INIT(40),
 	.inc_cpu_load = ATOMIC_INIT(70),
 	.dec_cpu_load = ATOMIC_INIT(50),
 	.freq_for_responsiveness = ATOMIC_INIT(918000),
-	.freq_for_responsiveness_max = ATOMIC_INIT(1350000),
+	.freq_for_responsiveness_max = ATOMIC_INIT(1242000),
 	.freq_step_at_min_freq = ATOMIC_INIT(40),
 	.freq_step = ATOMIC_INIT(40),
 	.freq_up_brake_at_min_freq = ATOMIC_INIT(30),
