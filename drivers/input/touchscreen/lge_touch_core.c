@@ -760,6 +760,25 @@ static void dump_pointer_trace(void)
 
 #ifdef CONFIG_DOUBLETAP_WAKE
 
+static inline int knock_code_number(struct lge_touch_data *ts, int id)
+{
+	unsigned int cx, cy;
+
+	cx = ts->pdata->caps->lcd_x;
+	cy = ts->pdata->caps->lcd_y;
+
+	if (ts->ts_data.curr_data[id].x_position < cx && ts->ts_data.curr_data[id].y_position < cy) {
+		return 1;
+	} else if (ts->ts_data.curr_data[id].x_position > cx && ts->ts_data.curr_data[id].y_position < cy) {
+		return 2;
+	} else if (ts->ts_data.curr_data[id].x_position < cx && ts->ts_data.curr_data[id].y_position > cy) {
+		return 3;
+	} else if (ts->ts_data.curr_data[id].x_position > cx && ts->ts_data.curr_data[id].y_position > cy) {
+		return 4;
+	}
+	else return 0;
+}
+
 /* Checks if there is a touch in the center of the screen */
 static inline int touch_within_limits(struct lge_touch_data *ts, int id)
 {
@@ -776,23 +795,37 @@ static inline int touch_within_limits(struct lge_touch_data *ts, int id)
 
 static inline void touch_check_dt_wake(struct lge_touch_data *ts, int id)
 {
+	struct timespec tis;
+	int milliseconds;
+
 	unsigned long diff_time;
 
 	diff_time = jiffies_to_msecs(jiffies - ts->dt_wake.time);
+
 
 	TOUCH_DEBUG_MSG("diff_time: %lu, hits: %u, x: %u, y: %u, id: %u\n",
 			diff_time, ts->dt_wake.hits,
 			ts->ts_data.curr_data[id].x_position,
 			ts->ts_data.curr_data[id].y_position, id);
+
+	if (ts->hells_code.enabled == 1 && ts->dt_wake.hits == 0) {
+		ts->hells_code.timer = 0;
+		ts->hells_code.code = 0;
+	}
+
 	/* Out of boundary. Reset hits and return */
-	if (!touch_within_limits(ts, id)) {
+	if (ts->hells_code.enabled == 0 && !touch_within_limits(ts, id)) {
 		TOUCH_DEBUG_MSG("Out of boundary\n");
 		goto reset;
 	}
 
 	/* Timeout. Reset hits and return */
-	if (ts->dt_wake.touch && diff_time > ts->dt_wake.max_interval) {
+	if (ts->dt_wake.touch && diff_time > (ts->hells_code.enabled ? 1000 : ts->dt_wake.max_interval)) {
 		TOUCH_DEBUG_MSG("Timeout\n");
+		if (ts->hells_code.enabled == 1) {
+			ts->hells_code.timer = 0;
+			ts->hells_code.code = 0;
+		}
 		goto reset;
 	}
 
@@ -809,15 +842,28 @@ static inline void touch_check_dt_wake(struct lge_touch_data *ts, int id)
 		/* Touch released. Increase hits */
 		TOUCH_DEBUG_MSG("Touch released. Increase hits\n");
 		ts->dt_wake.hits++;
+		if (ts->hells_code.enabled == 1 && knock_code_number(ts, id) == 0) {
+			ts->hells_code.timer = 0;
+			ts->hells_code.code = 0;
+			goto reset;
+		}
+		ts->hells_code.code = (ts->hells_code.code * 10) + knock_code_number(ts, id);
 
 		ts->ts_data.curr_data[id].state = 0;
 	}
 
-	if (ts->dt_wake.hits < 2)
+	if (ts->dt_wake.hits < (ts->hells_code.enabled ? 4 : 2))
 		return;
 	
 	/* Double tap detected try to resume */
 	TOUCH_INFO_MSG("Double tap detected try to resume\n");
+
+	/* Set hellsCode Timer */
+	if (ts->hells_code.enabled == 1) {
+		getnstimeofday(&tis); // get current time
+		milliseconds = tis.tv_sec*1000 + tis.tv_nsec/1000000;
+		ts->hells_code.timer = milliseconds;
+	}
 
 	if (mutex_trylock(&ts->dt_wake.lock)) {
 		input_report_key(ts->input_dev, KEY_POWER, 1);
@@ -1867,6 +1913,77 @@ static ssize_t store_dt_wake_pwr_disable(struct lge_touch_data *ts, const char *
 	return count;
 }
 
+static ssize_t show_hells_code_enabled(struct lge_touch_data *ts, char *buf)
+{
+	int ret = 0;
+
+	ret = sprintf(buf, "%u\n", ts->hells_code.enabled);
+
+	return ret;
+}
+
+static ssize_t store_hells_code_enabled(struct lge_touch_data *ts, const char *buf,
+								size_t count)
+{
+	unsigned int value;
+	int ret;
+
+	ret = sscanf(buf, "%u", &value);
+	if (value < 0 || value > 1)
+		return -EINVAL;
+
+	ts->hells_code.enabled = value;
+
+	return count;
+}
+
+static ssize_t show_hells_code_timer(struct lge_touch_data *ts, char *buf)
+{
+	int ret = 0;
+
+	ret = sprintf(buf, "%u\n", ts->hells_code.timer);
+
+	return ret;
+}
+
+static ssize_t store_hells_code_timer(struct lge_touch_data *ts, const char *buf,
+								size_t count)
+{
+	unsigned int value;
+	int ret;
+
+	ret = sscanf(buf, "%u", &value);
+	if (value < 0 || value > 1)
+		return -EINVAL;
+
+	ts->hells_code.timer = value;
+
+	return count;
+}
+
+static ssize_t show_hells_code(struct lge_touch_data *ts, char *buf)
+{
+	int ret = 0;
+
+	ret = sprintf(buf, "%u\n", ts->hells_code.code);
+
+	return ret;
+}
+
+static ssize_t store_hells_code(struct lge_touch_data *ts, const char *buf,
+								size_t count)
+{
+	unsigned int value;
+	int ret;
+
+	ret = sscanf(buf, "%u", &value);
+	if (value < 0 || value > 1)
+		return -EINVAL;
+
+	ts->hells_code.code = value;
+
+	return count;
+}
 #endif
 
 static LGE_TOUCH_ATTR(platform_data, S_IRUGO | S_IWUSR, show_platform_data, NULL);
@@ -1887,6 +2004,12 @@ static LGE_TOUCH_ATTR(dt_wake_enabled, S_IRUGO | S_IWUSR, show_dt_wake_enabled,
 					store_dt_wake_enabled);
 static LGE_TOUCH_ATTR(dt_wake_pwr_disable, S_IRUGO | S_IWUSR,
 			show_dt_wake_pwr_disable, store_dt_wake_pwr_disable);
+static LGE_TOUCH_ATTR(hells_code_enabled, S_IRUGO | S_IWUSR,
+			show_hells_code_enabled, store_hells_code_enabled);
+static LGE_TOUCH_ATTR(hells_code_timer, S_IRUGO | S_IWUSR,
+			show_hells_code_timer, store_hells_code_timer);
+static LGE_TOUCH_ATTR(hells_code, S_IRUGO | S_IWUGO,
+			show_hells_code, store_hells_code);
 #endif
 
 static struct attribute *lge_touch_attribute_list[] = {
@@ -1903,6 +2026,9 @@ static struct attribute *lge_touch_attribute_list[] = {
 #ifdef CONFIG_DOUBLETAP_WAKE
 	&lge_touch_attr_dt_wake_enabled.attr,
 	&lge_touch_attr_dt_wake_pwr_disable.attr,
+	&lge_touch_attr_hells_code_enabled.attr,
+	&lge_touch_attr_hells_code_timer.attr,
+	&lge_touch_attr_hells_code.attr,
 #endif
 	NULL,
 };

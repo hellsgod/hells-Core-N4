@@ -44,6 +44,11 @@ struct double_tap_wake {
 	struct wake_lock wlock;
 	struct mutex lock;
 };
+struct hells_knock_code {
+	int enabled;
+	int timer;
+	int code;
+};
 #endif
 
 struct touch_device_caps {
@@ -244,7 +249,8 @@ struct lge_touch_data {
 	struct work_struct              work_charger;
 #endif
 #ifdef CONFIG_DOUBLETAP_WAKE
-	struct double_tap_wake		dt_wake;
+	struct double_tap_wake	dt_wake;
+	struct hells_knock_code	hells_code;
 #endif
 };
 
