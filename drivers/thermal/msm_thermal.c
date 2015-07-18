@@ -24,7 +24,7 @@
 #include <linux/of.h>
 #include <mach/cpufreq.h>
 
-#define DEFAULT_TEMP_MAX	85
+#define DEFAULT_TEMP_MAX	70
 
 static unsigned int polling = HZ*2;
 static unsigned int cpu = 0;
