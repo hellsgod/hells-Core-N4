@@ -34,6 +34,7 @@
 #include <linux/msm_thermal.h>
 #include <linux/i2c/isa1200.h>
 #include <linux/gpio_keys.h>
+#include <linux/cpufreq_stats.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/hardware/gic.h>
@@ -1254,7 +1255,7 @@ static struct resource qcrypto_resources[] = {
 };
 
 static struct resource qcedev_resources[] = {
-	[0] = {
+	[0] = {extern int cpufreq_stats_platform_cpu_power_read_tables(int cpunum,  u32 *out_values, size_t num);
 		.start = QCE_0_BASE,
 		.end = QCE_0_BASE + QCE_SIZE - 1,
 		.flags = IORESOURCE_MEM,
@@ -2067,6 +2068,35 @@ static void __init apq8064_common_init(void)
 static void __init apq8064_allocate_memory_regions(void)
 {
 	apq8064_allocate_fb_region();
+}
+
+int cpufreq_stats_platform_cpu_power_read_tables(int cpunum, u32 *out_values, size_t num)
+{
+	static const u32 powerVals[] = {47050, 75780, 84500, 93990, 109460, 122350, 135350, 187070, 206620, 224540, 237520, 247180};
+	static const u32 cpuWeights[4] = {16384, 6717, 7700, 8847};
+	int i, numVals = sizeof(powerVals) / sizeof(*powerVals), numCpus = sizeof(cpuWeights) / sizeof(*cpuWeights);
+
+	/*
+	 * Our data source (power_profile.xml) only gives us values for 1st core,
+	 * and not per core as requested, so we weigh these. With weights: 100%,
+	 * 41%, 47%, 54%. This is the same thing as what hammerhead does, for
+	 * better or worse.
+	 */
+
+	if (num > numVals) {
+		pr_err("cpufreq_stats_platform_cpu_power_read_tables asked for too many values (wanted %u have %u)\n", (int)num, numVals);
+		return -1;
+	}
+
+	if (cpunum > numCpus) {
+		pr_err("cpufreq_stats_platform_cpu_power_read_tables asked for too many CPUs (wanted %u have %u)\n", cpunum, numCpus);
+		return -2;
+	}
+
+	for (i = 0; i < num; i++)
+		*out_values++ = powerVals[i] * cpuWeights[cpunum] >> 14;
+
+	return 0;
 }
 
 #ifdef CONFIG_EARJACK_DEBUGGER

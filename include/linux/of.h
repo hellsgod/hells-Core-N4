@@ -183,6 +183,7 @@ extern struct device_node *of_find_matching_node(struct device_node *from,
 #define for_each_matching_node(dn, matches) \
 	for (dn = of_find_matching_node(NULL, matches); dn; \
 	     dn = of_find_matching_node(dn, matches))
+
 extern struct device_node *of_find_node_by_path(const char *path);
 extern struct device_node *of_find_node_by_phandle(phandle handle);
 extern struct device_node *of_get_parent(const struct device_node *node);
@@ -259,6 +260,11 @@ extern void of_detach_node(struct device_node *);
 
 #define of_match_ptr(_ptr)	(_ptr)
 #else /* CONFIG_OF */
+
+static inline struct device_node *of_find_node_by_path(const char *path)
+{
+    return NULL;
+}
 
 static inline bool of_have_populated_dt(void)
 {

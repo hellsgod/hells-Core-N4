@@ -198,6 +198,7 @@ static struct ipv6_devconf ipv6_devconf __read_mostly = {
 	.accept_source_route	= 0,	/* we do not accept RH0 by default. */
 	.disable_ipv6		= 0,
 	.accept_dad		= 1,
+	.accept_ra_prefix_route = 1,
 	.use_oif_addrs_only	= 0,
 };
 
@@ -234,6 +235,7 @@ static struct ipv6_devconf ipv6_devconf_dflt __read_mostly = {
 	.accept_source_route	= 0,	/* we do not accept RH0 by default. */
 	.disable_ipv6		= 0,
 	.accept_dad		= 1,
+	.accept_ra_prefix_route = 1,
 	.use_oif_addrs_only	= 0,
 };
 
@@ -4687,6 +4689,13 @@ static struct addrconf_sysctl_table
 			.maxlen         = sizeof(int),
 			.mode           = 0644,
 			.proc_handler   = proc_dointvec
+		},
+		{
+			.procname	= "accept_ra_prefix_route",
+			.data		= &ipv6_devconf.accept_ra_prefix_route,
+			.maxlen		= sizeof(int),
+			.mode		= 0644,
+			.proc_handler	= proc_dointvec,
 		},
 		{
 			.procname       = "use_oif_addrs_only",
